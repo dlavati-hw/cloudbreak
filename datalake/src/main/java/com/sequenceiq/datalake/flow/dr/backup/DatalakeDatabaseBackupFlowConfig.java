@@ -11,6 +11,7 @@ import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupEvent
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupEvent.DATALAKE_DATABASE_BACKUP_IN_PROGRESS_EVENT;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupEvent.DATALAKE_BACKUP_SUCCESS_EVENT;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupEvent.DATALAKE_FULL_BACKUP_IN_PROGRESS_EVENT;
+import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupEvent.DATALAKE_TRIGGER_BACKUP_EVENT;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_DATABASE_BACKUP_COULD_NOT_START_STATE;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_DATABASE_BACKUP_FAILED_STATE;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_BACKUP_FAILED_STATE;
@@ -18,6 +19,7 @@ import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_DATABASE_BACKUP_IN_PROGRESS_STATE;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_DATABASE_BACKUP_START_STATE;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_FULL_BACKUP_IN_PROGRESS_STATE;
+import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.DATALAKE_TRIGGERING_BACKUP_STATE;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.FINAL_STATE;
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeDatabaseBackupState.INIT_STATE;
 
@@ -35,6 +37,16 @@ public class DatalakeDatabaseBackupFlowConfig extends AbstractFlowConfiguration<
     private static final List<Transition<DatalakeDatabaseBackupState, DatalakeDatabaseBackupEvent>> TRANSITIONS =
             new Transition.Builder<DatalakeDatabaseBackupState, DatalakeDatabaseBackupEvent>()
                     .defaultFailureEvent(DATALAKE_DATABASE_BACKUP_FAILED_EVENT)
+
+                    .from(INIT_STATE)
+                    .to(DATALAKE_TRIGGERING_BACKUP_STATE)
+                    .event(DATALAKE_TRIGGER_BACKUP_EVENT).noFailureEvent()
+
+                    .from(DATALAKE_TRIGGERING_BACKUP_STATE)
+                    .to(DATALAKE_DATABASE_BACKUP_START_STATE)
+                    .event(DATALAKE_DATABASE_BACKUP_EVENT)
+                    .failureState(DATALAKE_BACKUP_FAILED_STATE)
+                    .failureEvent(DATALAKE_BACKUP_FAILED_EVENT)
 
                     .from(INIT_STATE)
                     .to(DATALAKE_DATABASE_BACKUP_START_STATE)
@@ -55,7 +67,7 @@ public class DatalakeDatabaseBackupFlowConfig extends AbstractFlowConfiguration<
                     .from(DATALAKE_DATABASE_BACKUP_IN_PROGRESS_STATE)
                     .to(DATALAKE_FULL_BACKUP_IN_PROGRESS_STATE)
                     .event(DATALAKE_FULL_BACKUP_IN_PROGRESS_EVENT)
-                    .failureState(DATALAKE_DATABASE_BACKUP_FAILED_STATE)
+                    .failureState(DATALAKE_FULL_BACKUP_IN_PROGRESS_STATE)
                     .failureEvent(DATALAKE_DATABASE_BACKUP_FAILED_EVENT)
 
                     .from(DATALAKE_FULL_BACKUP_IN_PROGRESS_STATE)
@@ -96,7 +108,8 @@ public class DatalakeDatabaseBackupFlowConfig extends AbstractFlowConfiguration<
     @Override
     public DatalakeDatabaseBackupEvent[] getInitEvents() {
         return new DatalakeDatabaseBackupEvent[]{
-            DATALAKE_DATABASE_BACKUP_EVENT
+            DATALAKE_DATABASE_BACKUP_EVENT,
+            DATALAKE_TRIGGER_BACKUP_EVENT
         };
     }
 
