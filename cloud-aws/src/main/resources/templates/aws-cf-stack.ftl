@@ -533,6 +533,28 @@
         </#if>
         "ThroughputMode": "${efsFileSystem.throughputMode}"
       }
+    },
+    "MountTarget": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "ElasticFileSystem" },
+        <#if !existingSubnet>
+            "SubnetId": { "Ref": "PublicSubnet" },
+        <#else>
+            "SubnetId": { "Ref": "SubnetId" },
+        </#if>
+        "SecurityGroups" : [
+          <#list instanceGroups as group>
+            <#if group.cloudSecurityIds?size != 0>
+              <#list group.cloudSecurityIds as cloudSecurityId>
+                "${cloudSecurityId}"<#if cloudSecurityId_has_next || group_has_next>,</#if>
+              </#list>
+            <#else>
+              { "Ref" : "ClusterNodeSecurityGroup${group.groupName?replace('_', '')}" }<#if group_has_next>,</#if>
+            </#if>
+          </#list>
+        ]
+      }
     }
     </#if>
   }
