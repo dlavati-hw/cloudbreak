@@ -1,21 +1,18 @@
 package com.sequenceiq.distrox.v1.distrox.controller;
 
-import static com.sequenceiq.cloudbreak.api.endpoint.v4.common.StackType.WORKLOAD;
-import static org.mockito.Mockito.times;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sequenceiq.authorization.service.list.ListAuthorizationService;
+import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.response.StackViewV4Responses;
 import com.sequenceiq.cloudbreak.service.workspace.WorkspaceService;
-import com.sequenceiq.cloudbreak.workspace.model.Workspace;
 import com.sequenceiq.distrox.v1.distrox.StackOperations;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,41 +30,20 @@ class DistroXV1ControllerTest {
     @Mock
     private WorkspaceService workspaceService;
 
+    @Mock
+    private ListAuthorizationService listAuthorizationService;
+
     @InjectMocks
     private DistroXV1Controller distroXV1Controller;
 
-    @BeforeEach
-    void setup() {
-        Workspace workspace = new Workspace();
-        workspace.setId(WORKSPACE_ID);
-        when(workspaceService.getForCurrentUser()).thenReturn(workspace);
-    }
-
     @Test
-    void testListWithBothParamsNull() {
-        distroXV1Controller.list(null, null);
+    void testListUsesListAuthorizationService() {
+        StackViewV4Responses expected = new StackViewV4Responses();
+        when(listAuthorizationService.getResultAs()).thenReturn(expected);
 
-        verify(stackOperations, times(1)).listByEnvironmentCrn(WORKSPACE_ID, null, List.of(WORKLOAD));
-    }
+        StackViewV4Responses actual = distroXV1Controller.list(NAME, CRN);
 
-    @Test
-    void testListWithBothParamsSet() {
-        distroXV1Controller.list(NAME, CRN);
-
-        verify(stackOperations, times(1)).listByEnvironmentName(WORKSPACE_ID, NAME, List.of(WORKLOAD));
-    }
-
-    @Test
-    void testListWithNameSetAndCrnIsNull() {
-        distroXV1Controller.list(NAME, null);
-
-        verify(stackOperations, times(1)).listByEnvironmentName(WORKSPACE_ID, NAME, List.of(WORKLOAD));
-    }
-
-    @Test
-    void testListWithCrnSetAndNameIsNull() {
-        distroXV1Controller.list(null, CRN);
-
-        verify(stackOperations, times(1)).listByEnvironmentCrn(WORKSPACE_ID, CRN, List.of(WORKLOAD));
+        assertEquals(expected, actual);
+        verify(listAuthorizationService).getResultAs();
     }
 }

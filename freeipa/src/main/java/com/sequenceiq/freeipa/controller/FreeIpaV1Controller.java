@@ -16,11 +16,12 @@ import org.springframework.stereotype.Controller;
 
 import com.sequenceiq.authorization.annotation.CheckPermissionByRequestProperty;
 import com.sequenceiq.authorization.annotation.CheckPermissionByResourceCrn;
-import com.sequenceiq.authorization.annotation.DisableCheckPermissions;
+import com.sequenceiq.authorization.annotation.FilterListBasedOnPermissions;
 import com.sequenceiq.authorization.annotation.InternalOnly;
 import com.sequenceiq.authorization.annotation.RequestObject;
 import com.sequenceiq.authorization.annotation.ResourceCrn;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
+import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.security.internal.AccountId;
 import com.sequenceiq.cloudbreak.common.exception.BadRequestException;
 import com.sequenceiq.cloudbreak.structuredevent.rest.annotation.AccountEntityType;
@@ -37,6 +38,7 @@ import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.list.ListFreeIpaRespons
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.reboot.RebootInstancesRequest;
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.repair.RepairInstancesRequest;
 import com.sequenceiq.freeipa.api.v1.operation.model.OperationStatus;
+import com.sequenceiq.freeipa.authorization.FreeIpaFiltering;
 import com.sequenceiq.freeipa.client.FreeIpaClientException;
 import com.sequenceiq.freeipa.client.FreeIpaClientExceptionWrapper;
 import com.sequenceiq.freeipa.controller.validation.AttachChildEnvironmentRequestValidator;
@@ -49,8 +51,8 @@ import com.sequenceiq.freeipa.service.stack.ClusterProxyService;
 import com.sequenceiq.freeipa.service.stack.FreeIpaCreationService;
 import com.sequenceiq.freeipa.service.stack.FreeIpaDeletionService;
 import com.sequenceiq.freeipa.service.stack.FreeIpaDescribeService;
-import com.sequenceiq.freeipa.service.stack.FreeIpaStackHealthDetailsService;
 import com.sequenceiq.freeipa.service.stack.FreeIpaListService;
+import com.sequenceiq.freeipa.service.stack.FreeIpaStackHealthDetailsService;
 import com.sequenceiq.freeipa.service.stack.FreeIpaStartService;
 import com.sequenceiq.freeipa.service.stack.FreeIpaStopService;
 import com.sequenceiq.freeipa.service.stack.RepairInstancesService;
@@ -107,6 +109,9 @@ public class FreeIpaV1Controller implements FreeIpaV1Endpoint {
     @Inject
     private ClusterProxyService clusterProxyService;
 
+    @Inject
+    private ListAuthorizationService listAuthorizationService;
+
     @Override
     @CheckPermissionByRequestProperty(path = "environmentCrn", type = CRN, action = EDIT_ENVIRONMENT)
     public DescribeFreeIpaResponse create(@RequestObject @Valid CreateFreeIpaRequest request) {
@@ -154,10 +159,9 @@ public class FreeIpaV1Controller implements FreeIpaV1Endpoint {
     }
 
     @Override
-    @DisableCheckPermissions
+    @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT, filter = FreeIpaFiltering.class)
     public List<ListFreeIpaResponse> list() {
-        String accountId = crnService.getCurrentAccountId();
-        return listInternal(accountId);
+        return listAuthorizationService.getResultAs();
     }
 
     @Override

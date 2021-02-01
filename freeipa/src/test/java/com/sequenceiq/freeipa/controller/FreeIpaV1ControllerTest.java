@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.common.exception.BadRequestException;
 import com.sequenceiq.cloudbreak.validation.ValidationResult;
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.FreeIpaServerBase;
@@ -83,6 +84,9 @@ class FreeIpaV1ControllerTest {
 
     @Mock
     private RepairInstancesService repairInstancesService;
+
+    @Mock
+    private ListAuthorizationService listAuthorizationService;
 
     @BeforeEach
     void setUp() {
@@ -160,13 +164,11 @@ class FreeIpaV1ControllerTest {
     @Test
     void list() {
         List<ListFreeIpaResponse> responseList = Collections.singletonList(new ListFreeIpaResponse());
-        when(freeIpaListService.list(ACCOUNT_ID)).thenReturn(responseList);
+        when(listAuthorizationService.getResultAs()).thenReturn(responseList);
 
         List<ListFreeIpaResponse> actual = underTest.list();
 
         assertEquals(responseList, actual);
-        verify(crnService).getCurrentAccountId();
-        verify(freeIpaListService).list(ACCOUNT_ID);
     }
 
     @Test

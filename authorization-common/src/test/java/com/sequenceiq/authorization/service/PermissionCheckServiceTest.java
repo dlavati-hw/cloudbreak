@@ -3,12 +3,13 @@ package com.sequenceiq.authorization.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -17,8 +18,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -28,11 +31,14 @@ import com.sequenceiq.authorization.annotation.DisableCheckPermissions;
 import com.sequenceiq.authorization.annotation.FilterListBasedOnPermissions;
 import com.sequenceiq.authorization.annotation.InternalOnly;
 import com.sequenceiq.authorization.annotation.ResourceCrn;
+import com.sequenceiq.authorization.resource.AuthorizationFiltering;
+import com.sequenceiq.authorization.resource.AuthorizationResource;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
 import com.sequenceiq.authorization.resource.ResourceCrnAwareApiModel;
-import com.sequenceiq.authorization.service.list.ListPermissionChecker;
+import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.ReflectionUtil;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
+import com.sequenceiq.cloudbreak.auth.altus.Crn;
 import com.sequenceiq.cloudbreak.auth.security.CrnUserDetailsService;
 import com.sequenceiq.cloudbreak.auth.security.internal.InternalUserModifier;
 
@@ -50,9 +56,6 @@ public class PermissionCheckServiceTest {
     private CommonPermissionCheckingUtils commonPermissionCheckingUtils;
 
     @Mock
-    private ListPermissionChecker listPermissionChecker;
-
-    @Mock
     private InternalUserModifier internalUserModifier;
 
     @Mock
@@ -63,6 +66,9 @@ public class PermissionCheckServiceTest {
 
     @Mock
     private AccountAuthorizationService accountAuthorizationService;
+
+    @Mock
+    private ListAuthorizationService listAuthorizationService;
 
     @Mock
     private ResourceAuthorizationService resourceAuthorizationService;
@@ -79,6 +85,7 @@ public class PermissionCheckServiceTest {
     @Before
     public void setUp() {
         when(proceedingJoinPoint.getSignature()).thenReturn(methodSignature);
+        lenient().when(proceedingJoinPoint.getTarget()).thenReturn(new ExampleClass());
     }
 
     @Test
@@ -92,7 +99,7 @@ public class PermissionCheckServiceTest {
         verifyNoInteractions(
                 internalUserModifier,
                 accountAuthorizationService,
-                listPermissionChecker,
+                listAuthorizationService,
                 resourceAuthorizationService);
     }
 
@@ -106,7 +113,7 @@ public class PermissionCheckServiceTest {
         verifyNoInteractions(
                 internalUserModifier,
                 accountAuthorizationService,
-                listPermissionChecker,
+                listAuthorizationService,
                 resourceAuthorizationService);
     }
 
@@ -130,7 +137,7 @@ public class PermissionCheckServiceTest {
         verify(commonPermissionCheckingUtils).proceed(eq(proceedingJoinPoint), eq(methodSignature), anyLong());
         verifyNoInteractions(
                 internalUserModifier,
-                listPermissionChecker);
+                listAuthorizationService);
     }
 
     @Test
@@ -144,7 +151,7 @@ public class PermissionCheckServiceTest {
         verify(commonPermissionCheckingUtils).proceed(eq(proceedingJoinPoint), eq(methodSignature), anyLong());
         verifyNoInteractions(
                 internalUserModifier,
-                listPermissionChecker);
+                listAuthorizationService);
     }
 
     @Test
@@ -158,7 +165,7 @@ public class PermissionCheckServiceTest {
         verifyNoInteractions(
                 internalUserModifier,
                 accountAuthorizationService,
-                listPermissionChecker);
+                listAuthorizationService);
     }
 
     @Test
@@ -167,13 +174,17 @@ public class PermissionCheckServiceTest {
 
         ThreadBasedUserCrnProvider.doAs(USER_CRN, () -> underTest.hasPermission(proceedingJoinPoint));
 
-        verify(listPermissionChecker).checkPermissions(any(FilterListBasedOnPermissions.class), eq(USER_CRN),
-                eq(proceedingJoinPoint), eq(methodSignature), anyLong());
-        verify(commonPermissionCheckingUtils, times(0)).proceed(eq(proceedingJoinPoint), eq(methodSignature), anyLong());
+        InOrder inOrder = Mockito.inOrder(resourceAuthorizationService, listAuthorizationService, commonPermissionCheckingUtils);
+
+        inOrder.verify(resourceAuthorizationService).authorize(eq(USER_CRN), eq(proceedingJoinPoint), eq(methodSignature), any());
+        inOrder.verify(listAuthorizationService).filterList(
+                any(FilterListBasedOnPermissions.class),
+                eq(Crn.safeFromString(USER_CRN)),
+                eq(proceedingJoinPoint), eq(methodSignature), any());
+        inOrder.verify(commonPermissionCheckingUtils).proceed(eq(proceedingJoinPoint), eq(methodSignature), anyLong());
         verifyNoInteractions(
                 internalUserModifier,
-                accountAuthorizationService,
-                resourceAuthorizationService);
+                accountAuthorizationService);
     }
 
     @Test
@@ -182,13 +193,13 @@ public class PermissionCheckServiceTest {
 
         ThreadBasedUserCrnProvider.doAs(USER_CRN, () -> underTest.hasPermission(proceedingJoinPoint));
 
-        verify(accountAuthorizationService).authorize(any(CheckPermissionByAccount.class), eq(USER_CRN));
-        verify(listPermissionChecker).checkPermissions(any(FilterListBasedOnPermissions.class), eq(USER_CRN),
-                eq(proceedingJoinPoint), eq(methodSignature), anyLong());
-        verify(commonPermissionCheckingUtils, times(0)).proceed(eq(proceedingJoinPoint), eq(methodSignature), anyLong());
-        verifyNoInteractions(
-                internalUserModifier,
-                resourceAuthorizationService);
+        InOrder inOrder = Mockito.inOrder(accountAuthorizationService, resourceAuthorizationService, listAuthorizationService, commonPermissionCheckingUtils);
+        inOrder.verify(accountAuthorizationService).authorize(any(CheckPermissionByAccount.class), eq(USER_CRN));
+        inOrder.verify(resourceAuthorizationService).authorize(eq(USER_CRN), eq(proceedingJoinPoint), eq(methodSignature), any());
+        inOrder.verify(listAuthorizationService).filterList(any(FilterListBasedOnPermissions.class), eq(Crn.safeFromString(USER_CRN)),
+                eq(proceedingJoinPoint), eq(methodSignature), any());
+        inOrder.verify(commonPermissionCheckingUtils).proceed(eq(proceedingJoinPoint), eq(methodSignature), anyLong());
+        verifyNoInteractions(internalUserModifier);
     }
 
     @Test
@@ -211,14 +222,14 @@ public class PermissionCheckServiceTest {
         verifyNoInteractions(
                 internalUserModifier,
                 accountAuthorizationService,
-                listPermissionChecker,
+                listAuthorizationService,
                 resourceAuthorizationService);
     }
 
     @Test
     public void testInternalOnlyClassIfNotInternalActor() throws NoSuchMethodException {
-        when(commonPermissionCheckingUtils.isInternalOnly(proceedingJoinPoint)).thenReturn(true);
         when(methodSignature.getMethod()).thenReturn(InternalOnlyClassExample.class.getMethod("get"));
+        when(proceedingJoinPoint.getTarget()).thenReturn(new InternalOnlyClassExample());
 
         thrown.expect(AccessDeniedException.class);
         thrown.expectMessage("You have no access to this resource.");
@@ -236,7 +247,7 @@ public class PermissionCheckServiceTest {
         verifyNoInteractions(
                 internalUserModifier,
                 accountAuthorizationService,
-                listPermissionChecker,
+                listAuthorizationService,
                 resourceAuthorizationService);
     }
 
@@ -269,13 +280,15 @@ public class PermissionCheckServiceTest {
 
         }
 
-        @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT)
+        @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT,
+                filter = ExampleFiltering.class)
         public List<ResourceCrnAwareApiModel> listMethod() {
             return List.of();
         }
 
         @CheckPermissionByAccount(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT)
-        @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT)
+        @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT,
+                filter = ExampleFiltering.class)
         public List<ResourceCrnAwareApiModel> listAndAcccountBasedMethod() {
             return List.of();
         }
@@ -283,6 +296,24 @@ public class PermissionCheckServiceTest {
         @InternalOnly
         public void internalOnlyMethod() {
 
+        }
+    }
+
+    static class ExampleFiltering implements AuthorizationFiltering<String> {
+
+        @Override
+        public List<AuthorizationResource> getAllResources(Map<String, Object> args) {
+            return List.of();
+        }
+
+        @Override
+        public String filterByIds(List<Long> authorizedResourceIds, Map<String, Object> args) {
+            return "NOPE";
+        }
+
+        @Override
+        public String getAll(Map<String, Object> args) {
+            return "NOPE";
         }
     }
 

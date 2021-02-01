@@ -20,11 +20,11 @@ import com.sequenceiq.authorization.annotation.CustomPermissionCheck;
 import com.sequenceiq.authorization.annotation.DisableCheckPermissions;
 import com.sequenceiq.authorization.annotation.FilterListBasedOnPermissions;
 import com.sequenceiq.authorization.annotation.InternalOnly;
-import com.sequenceiq.authorization.service.list.ListPermissionChecker;
-import com.sequenceiq.cloudbreak.auth.altus.InternalCrnBuilder;
+import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.ReflectionUtil;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
 import com.sequenceiq.cloudbreak.auth.altus.Crn;
+import com.sequenceiq.cloudbreak.auth.altus.InternalCrnBuilder;
 import com.sequenceiq.cloudbreak.auth.security.CrnUserDetailsService;
 import com.sequenceiq.cloudbreak.auth.security.internal.InitiatorUserCrn;
 import com.sequenceiq.cloudbreak.auth.security.internal.InternalUserModifier;
@@ -40,9 +40,6 @@ public class PermissionCheckService {
     private CommonPermissionCheckingUtils commonPermissionCheckingUtils;
 
     @Inject
-    private ListPermissionChecker listPermissionChecker;
-
-    @Inject
     private InternalUserModifier internalUserModifier;
 
     @Inject
@@ -55,6 +52,9 @@ public class PermissionCheckService {
     private AccountAuthorizationService accountAuthorizationService;
 
     @Inject
+    private ListAuthorizationService listAuthorizationService;
+
+    @Inject
     private ResourceAuthorizationService resourceAuthorizationService;
 
     public Object hasPermission(ProceedingJoinPoint proceedingJoinPoint) {
@@ -65,31 +65,34 @@ public class PermissionCheckService {
         String userCrn = ThreadBasedUserCrnProvider.getUserCrn();
         boolean internalUser = userCrn != null && InternalCrnBuilder.isInternalCrn(userCrn);
         Optional<String> initiatorUserCrnParameter = persistInitiatorUserIfParameterPresent(proceedingJoinPoint, methodSignature);
-        if (internalUser && initiatorUserCrnParameter.isPresent()) {
-            return ThreadBasedUserCrnProvider.doAs(initiatorUserCrnParameter.get(), () ->
-                    commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime));
+
+        if (!internalUser && !hasAnnotationOnClass(proceedingJoinPoint, DisableCheckPermissions.class)
+                && !hasAnyAnnotationOnMethod(methodSignature, DisableCheckPermissions.class, CustomPermissionCheck.class)) {
+            checkNotNull(userCrn);
+            validateNotInternalOnly(proceedingJoinPoint, methodSignature);
+            if (hasAnnotationOnMethod(methodSignature, CheckPermissionByAccount.class)) {
+                accountAuthorizationService.authorize(methodSignature.getMethod().getAnnotation(CheckPermissionByAccount.class), userCrn);
+            }
+            resourceAuthorizationService.authorize(userCrn, proceedingJoinPoint, methodSignature, getRequestId());
         }
 
-        if (internalUser || commonPermissionCheckingUtils.isAuthorizationDisabled(proceedingJoinPoint)
-                || hasAnyAnnotation(methodSignature, DisableCheckPermissions.class, CustomPermissionCheck.class)) {
-            return commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime);
+        boolean hasListFiltering = hasAnnotationOnMethod(methodSignature, FilterListBasedOnPermissions.class);
+        try {
+            if (hasListFiltering) {
+                FilterListBasedOnPermissions listFilterAnnotation = methodSignature.getMethod().getAnnotation(FilterListBasedOnPermissions.class);
+                listAuthorizationService.filterList(listFilterAnnotation, Crn.safeFromString(userCrn), proceedingJoinPoint, methodSignature, getRequestId());
+            }
+            if (internalUser && initiatorUserCrnParameter.isPresent()) {
+                return ThreadBasedUserCrnProvider.doAs(initiatorUserCrnParameter.get(), () ->
+                        commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime));
+            } else {
+                return commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime);
+            }
+        } finally {
+            if (hasListFiltering) {
+                listAuthorizationService.removeFilterResult();
+            }
         }
-
-        // at this point user CRN should be present
-        checkNotNull(userCrn);
-        validateNotInternalOnly(proceedingJoinPoint, methodSignature);
-
-        if (hasAnnotation(methodSignature, CheckPermissionByAccount.class)) {
-            accountAuthorizationService.authorize(methodSignature.getMethod().getAnnotation(CheckPermissionByAccount.class), userCrn);
-        }
-
-        if (hasAnnotation(methodSignature, FilterListBasedOnPermissions.class)) {
-            FilterListBasedOnPermissions listFilterAnnotation = methodSignature.getMethod().getAnnotation(FilterListBasedOnPermissions.class);
-            return listPermissionChecker.checkPermissions(listFilterAnnotation, userCrn, proceedingJoinPoint, methodSignature, startTime);
-        }
-
-        resourceAuthorizationService.authorize(userCrn, proceedingJoinPoint, methodSignature, getRequestId());
-        return commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime);
     }
 
     private Optional<String> persistInitiatorUserIfParameterPresent(ProceedingJoinPoint proceedingJoinPoint, MethodSignature methodSignature) {
@@ -103,10 +106,7 @@ public class PermissionCheckService {
     }
 
     private void validateNotInternalOnly(ProceedingJoinPoint proceedingJoinPoint, MethodSignature methodSignature) {
-        if (commonPermissionCheckingUtils.isInternalOnly(proceedingJoinPoint)) {
-            throw getAccessDeniedAndLogInternalActorRestriction(methodSignature);
-        }
-        if (hasAnnotation(methodSignature, InternalOnly.class)) {
+        if (hasAnnotationOnClass(proceedingJoinPoint, InternalOnly.class) || hasAnnotationOnMethod(methodSignature, InternalOnly.class)) {
             throw getAccessDeniedAndLogInternalActorRestriction(methodSignature);
         }
     }
@@ -118,17 +118,21 @@ public class PermissionCheckService {
     }
 
     @SafeVarargs
-    private boolean hasAnyAnnotation(MethodSignature methodSignature, Class<? extends Annotation>... annotations) {
+    private boolean hasAnyAnnotationOnMethod(MethodSignature methodSignature, Class<? extends Annotation>... annotations) {
         for (Class<? extends Annotation> annotation : annotations) {
-            if (hasAnnotation(methodSignature, annotation)) {
+            if (hasAnnotationOnMethod(methodSignature, annotation)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean hasAnnotation(MethodSignature methodSignature, Class<? extends Annotation> annotation) {
+    private boolean hasAnnotationOnMethod(MethodSignature methodSignature, Class<? extends Annotation> annotation) {
         return methodSignature.getMethod().isAnnotationPresent(annotation);
+    }
+
+    private boolean hasAnnotationOnClass(ProceedingJoinPoint proceedingJoinPoint, Class<? extends Annotation> annotation) {
+        return proceedingJoinPoint.getTarget().getClass().isAnnotationPresent(annotation);
     }
 
     protected Optional<String> getRequestId() {
