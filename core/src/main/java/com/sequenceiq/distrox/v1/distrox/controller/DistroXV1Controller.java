@@ -41,7 +41,6 @@ import com.sequenceiq.authorization.annotation.ResourceCrnList;
 import com.sequenceiq.authorization.annotation.ResourceName;
 import com.sequenceiq.authorization.annotation.ResourceNameList;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.common.StackType;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.dto.NameOrCrn;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.request.CertificatesRotationV4Request;
@@ -133,13 +132,13 @@ public class DistroXV1Controller implements DistroXV1Endpoint {
     private DistroxService distroxService;
 
     @Inject
-    private ListAuthorizationService listAuthorizationService;
+    private DatahubFiltering datahubFiltering;
 
     @Override
     @FilterListBasedOnPermissions(action = DESCRIBE_DATAHUB, filter = DatahubFiltering.class)
     public StackViewV4Responses list(@FilterParam(DatahubFiltering.ENV_NAME) String environmentName,
             @FilterParam(DatahubFiltering.ENV_CRN) String environmentCrn) {
-        return listAuthorizationService.getResultAs();
+        return datahubFiltering.filterDataHubs(DESCRIBE_DATAHUB, environmentName, environmentCrn);
     }
 
     @Override

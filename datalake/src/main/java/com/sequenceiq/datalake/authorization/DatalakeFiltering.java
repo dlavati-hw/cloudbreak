@@ -1,5 +1,6 @@
 package com.sequenceiq.datalake.authorization;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -10,13 +11,15 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.collect.Lists;
 import com.sequenceiq.authorization.resource.AuthorizationResource;
-import com.sequenceiq.authorization.resource.AuthorizationFiltering;
+import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
+import com.sequenceiq.authorization.service.list.AbstractAuthorizationFiltering;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
+import com.sequenceiq.cloudbreak.auth.altus.Crn;
 import com.sequenceiq.datalake.entity.SdxCluster;
 import com.sequenceiq.datalake.service.sdx.SdxService;
 
 @Component
-public class DatalakeFiltering implements AuthorizationFiltering<List<SdxCluster>> {
+public class DatalakeFiltering extends AbstractAuthorizationFiltering<List<SdxCluster>> {
 
     public static final String ENV_NAME = "ENV_NAME";
 
@@ -24,6 +27,18 @@ public class DatalakeFiltering implements AuthorizationFiltering<List<SdxCluster
 
     @Inject
     private SdxService sdxService;
+
+    public List<SdxCluster> filterDataLakesByEnvNameOrAll(AuthorizationResourceAction action, String environmentName) {
+        Map<String, Object> args = new HashMap<>();
+        args.put(ENV_NAME, environmentName);
+        return filterResources(Crn.safeFromString(ThreadBasedUserCrnProvider.getUserCrn()), action, args);
+    }
+
+    public List<SdxCluster> filterDataLakesByEnvCrn(AuthorizationResourceAction action, String environmentCrn) {
+        Map<String, Object> args = new HashMap<>();
+        args.put(ENV_CRN, environmentCrn);
+        return filterResources(Crn.safeFromString(ThreadBasedUserCrnProvider.getUserCrn()), action, args);
+    }
 
     @Override
     public List<AuthorizationResource> getAllResources(Map<String, Object> args) {

@@ -32,7 +32,6 @@ import com.sequenceiq.authorization.annotation.ResourceCrnList;
 import com.sequenceiq.authorization.annotation.ResourceName;
 import com.sequenceiq.authorization.annotation.ResourceNameList;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
 import com.sequenceiq.cloudbreak.auth.altus.CrnResourceDescriptor;
 import com.sequenceiq.cloudbreak.auth.altus.EntitlementService;
@@ -103,7 +102,7 @@ public class EnvironmentController implements EnvironmentEndpoint {
 
     private final EntitlementService entitlementService;
 
-    private final ListAuthorizationService listAuthorizationService;
+    private final EnvironmentFiltering environmentFiltering;
 
     public EnvironmentController(
             EnvironmentApiConverter environmentApiConverter,
@@ -118,7 +117,7 @@ public class EnvironmentController implements EnvironmentEndpoint {
             CredentialToCredentialV1ResponseConverter credentialConverter,
             EnvironmentStackConfigUpdateService stackConfigUpdateService,
             EntitlementService entitlementService,
-            ListAuthorizationService listAuthorizationService) {
+            EnvironmentFiltering environmentFiltering) {
         this.environmentApiConverter = environmentApiConverter;
         this.environmentResponseConverter = environmentResponseConverter;
         this.environmentService = environmentService;
@@ -131,7 +130,7 @@ public class EnvironmentController implements EnvironmentEndpoint {
         this.credentialConverter = credentialConverter;
         this.stackConfigUpdateService = stackConfigUpdateService;
         this.entitlementService = entitlementService;
-        this.listAuthorizationService = listAuthorizationService;
+        this.environmentFiltering = environmentFiltering;
     }
 
     @Override
@@ -231,11 +230,10 @@ public class EnvironmentController implements EnvironmentEndpoint {
         return environmentResponseConverter.dtoToDetailedResponse(result);
     }
 
-    // TODO(authz): list filtering
     @Override
     @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT, filter = EnvironmentFiltering.class)
     public SimpleEnvironmentResponses list() {
-        List<EnvironmentDto> environmentDtos = listAuthorizationService.getResultAs();
+        List<EnvironmentDto> environmentDtos = environmentFiltering.filterEnvironments(AuthorizationResourceAction.DESCRIBE_ENVIRONMENT);
         return toSimpleEnvironmentResponses(environmentDtos);
     }
 

@@ -7,20 +7,27 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
-import com.sequenceiq.authorization.resource.AuthorizationFiltering;
 import com.sequenceiq.authorization.resource.AuthorizationResource;
+import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
+import com.sequenceiq.authorization.service.list.AbstractAuthorizationFiltering;
+import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
+import com.sequenceiq.cloudbreak.auth.altus.Crn;
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.list.ListFreeIpaResponse;
 import com.sequenceiq.freeipa.service.stack.FreeIpaListService;
 import com.sequenceiq.freeipa.util.CrnService;
 
 @Component
-public class FreeIpaFiltering implements AuthorizationFiltering<List<ListFreeIpaResponse>> {
+public class FreeIpaFiltering extends AbstractAuthorizationFiltering<List<ListFreeIpaResponse>> {
 
     @Inject
     private CrnService crnService;
 
     @Inject
     private FreeIpaListService freeIpaListService;
+
+    public List<ListFreeIpaResponse> filterFreeIpas(AuthorizationResourceAction action) {
+        return filterResources(Crn.safeFromString(ThreadBasedUserCrnProvider.getUserCrn()), action, Map.of());
+    }
 
     @Override
     public List<AuthorizationResource> getAllResources(Map<String, Object> args) {

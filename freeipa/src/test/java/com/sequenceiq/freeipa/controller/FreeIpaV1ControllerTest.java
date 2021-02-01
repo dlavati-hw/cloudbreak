@@ -23,7 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
+import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
 import com.sequenceiq.cloudbreak.common.exception.BadRequestException;
 import com.sequenceiq.cloudbreak.validation.ValidationResult;
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.FreeIpaServerBase;
@@ -33,6 +33,7 @@ import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.detachchildenv.DetachCh
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.list.ListFreeIpaResponse;
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.reboot.RebootInstancesRequest;
 import com.sequenceiq.freeipa.api.v1.freeipa.stack.model.repair.RepairInstancesRequest;
+import com.sequenceiq.freeipa.authorization.FreeIpaFiltering;
 import com.sequenceiq.freeipa.client.FreeIpaClientException;
 import com.sequenceiq.freeipa.controller.validation.AttachChildEnvironmentRequestValidator;
 import com.sequenceiq.freeipa.controller.validation.CreateFreeIpaRequestValidator;
@@ -86,7 +87,7 @@ class FreeIpaV1ControllerTest {
     private RepairInstancesService repairInstancesService;
 
     @Mock
-    private ListAuthorizationService listAuthorizationService;
+    private FreeIpaFiltering freeIpaFiltering;
 
     @BeforeEach
     void setUp() {
@@ -164,7 +165,7 @@ class FreeIpaV1ControllerTest {
     @Test
     void list() {
         List<ListFreeIpaResponse> responseList = Collections.singletonList(new ListFreeIpaResponse());
-        when(listAuthorizationService.getResultAs()).thenReturn(responseList);
+        when(freeIpaFiltering.filterFreeIpas(AuthorizationResourceAction.DESCRIBE_ENVIRONMENT)).thenReturn(responseList);
 
         List<ListFreeIpaResponse> actual = underTest.list();
 

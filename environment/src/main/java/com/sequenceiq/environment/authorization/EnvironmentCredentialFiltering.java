@@ -6,15 +6,17 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import com.sequenceiq.authorization.resource.AuthorizationFiltering;
 import com.sequenceiq.authorization.resource.AuthorizationResource;
+import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
+import com.sequenceiq.authorization.service.list.AbstractAuthorizationFiltering;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
+import com.sequenceiq.cloudbreak.auth.altus.Crn;
 import com.sequenceiq.common.model.CredentialType;
 import com.sequenceiq.environment.credential.domain.Credential;
 import com.sequenceiq.environment.credential.service.CredentialService;
 
 @Component
-public class EnvironmentCredentialFiltering implements AuthorizationFiltering<Set<Credential>> {
+public class EnvironmentCredentialFiltering extends AbstractAuthorizationFiltering<Set<Credential>> {
 
     private static final CredentialType ENVIRONMENT = CredentialType.ENVIRONMENT;
 
@@ -22,6 +24,10 @@ public class EnvironmentCredentialFiltering implements AuthorizationFiltering<Se
 
     public EnvironmentCredentialFiltering(CredentialService credentialService) {
         this.credentialService = credentialService;
+    }
+
+    public Set<Credential> filterCredntials(AuthorizationResourceAction action) {
+        return filterResources(Crn.safeFromString(ThreadBasedUserCrnProvider.getUserCrn()), action, Map.of());
     }
 
     @Override

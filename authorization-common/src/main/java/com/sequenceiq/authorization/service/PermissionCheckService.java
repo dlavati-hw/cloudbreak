@@ -18,9 +18,7 @@ import org.springframework.stereotype.Service;
 import com.sequenceiq.authorization.annotation.CheckPermissionByAccount;
 import com.sequenceiq.authorization.annotation.CustomPermissionCheck;
 import com.sequenceiq.authorization.annotation.DisableCheckPermissions;
-import com.sequenceiq.authorization.annotation.FilterListBasedOnPermissions;
 import com.sequenceiq.authorization.annotation.InternalOnly;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.ReflectionUtil;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
 import com.sequenceiq.cloudbreak.auth.altus.Crn;
@@ -52,9 +50,6 @@ public class PermissionCheckService {
     private AccountAuthorizationService accountAuthorizationService;
 
     @Inject
-    private ListAuthorizationService listAuthorizationService;
-
-    @Inject
     private ResourceAuthorizationService resourceAuthorizationService;
 
     public Object hasPermission(ProceedingJoinPoint proceedingJoinPoint) {
@@ -76,22 +71,11 @@ public class PermissionCheckService {
             resourceAuthorizationService.authorize(userCrn, proceedingJoinPoint, methodSignature, getRequestId());
         }
 
-        boolean hasListFiltering = hasAnnotationOnMethod(methodSignature, FilterListBasedOnPermissions.class);
-        try {
-            if (hasListFiltering) {
-                FilterListBasedOnPermissions listFilterAnnotation = methodSignature.getMethod().getAnnotation(FilterListBasedOnPermissions.class);
-                listAuthorizationService.filterList(listFilterAnnotation, Crn.safeFromString(userCrn), proceedingJoinPoint, methodSignature, getRequestId());
-            }
-            if (internalUser && initiatorUserCrnParameter.isPresent()) {
-                return ThreadBasedUserCrnProvider.doAs(initiatorUserCrnParameter.get(), () ->
-                        commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime));
-            } else {
-                return commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime);
-            }
-        } finally {
-            if (hasListFiltering) {
-                listAuthorizationService.removeFilterResult();
-            }
+        if (internalUser && initiatorUserCrnParameter.isPresent()) {
+            return ThreadBasedUserCrnProvider.doAs(initiatorUserCrnParameter.get(), () ->
+                    commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime));
+        } else {
+            return commonPermissionCheckingUtils.proceed(proceedingJoinPoint, methodSignature, startTime);
         }
     }
 

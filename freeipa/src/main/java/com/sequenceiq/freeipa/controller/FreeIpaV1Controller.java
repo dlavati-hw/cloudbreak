@@ -21,7 +21,6 @@ import com.sequenceiq.authorization.annotation.InternalOnly;
 import com.sequenceiq.authorization.annotation.RequestObject;
 import com.sequenceiq.authorization.annotation.ResourceCrn;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.security.internal.AccountId;
 import com.sequenceiq.cloudbreak.common.exception.BadRequestException;
 import com.sequenceiq.cloudbreak.structuredevent.rest.annotation.AccountEntityType;
@@ -110,7 +109,7 @@ public class FreeIpaV1Controller implements FreeIpaV1Endpoint {
     private ClusterProxyService clusterProxyService;
 
     @Inject
-    private ListAuthorizationService listAuthorizationService;
+    private FreeIpaFiltering freeIpaFiltering;
 
     @Override
     @CheckPermissionByRequestProperty(path = "environmentCrn", type = CRN, action = EDIT_ENVIRONMENT)
@@ -161,7 +160,7 @@ public class FreeIpaV1Controller implements FreeIpaV1Endpoint {
     @Override
     @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_ENVIRONMENT, filter = FreeIpaFiltering.class)
     public List<ListFreeIpaResponse> list() {
-        return listAuthorizationService.getResultAs();
+        return freeIpaFiltering.filterFreeIpas(AuthorizationResourceAction.DESCRIBE_ENVIRONMENT);
     }
 
     @Override

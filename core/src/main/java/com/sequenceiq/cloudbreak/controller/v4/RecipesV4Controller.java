@@ -21,7 +21,6 @@ import com.sequenceiq.authorization.annotation.ResourceCrn;
 import com.sequenceiq.authorization.annotation.ResourceName;
 import com.sequenceiq.authorization.annotation.ResourceNameList;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.dto.NameOrCrn;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.recipes.RecipeV4Endpoint;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.recipes.requests.RecipeV4Request;
@@ -50,13 +49,12 @@ public class RecipesV4Controller extends NotificationController implements Recip
     private ConverterUtil converterUtil;
 
     @Inject
-    private ListAuthorizationService listAuthorizationService;
+    private RecipeFiltering recipeFiltering;
 
-    // TODO(authz): list filtering
     @Override
     @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_RECIPE, filter = RecipeFiltering.class)
     public RecipeViewV4Responses list(@FilterParam(RecipeFiltering.WORKSPACE_ID) Long workspaceId) {
-        Set<RecipeView> allViewByWorkspaceId = listAuthorizationService.getResultAs();
+        Set<RecipeView> allViewByWorkspaceId = recipeFiltering.filterRecipes(AuthorizationResourceAction.DESCRIBE_RECIPE, workspaceId);
         return new RecipeViewV4Responses(converterUtil.convertAllAsSet(allViewByWorkspaceId, RecipeViewV4Response.class));
     }
 

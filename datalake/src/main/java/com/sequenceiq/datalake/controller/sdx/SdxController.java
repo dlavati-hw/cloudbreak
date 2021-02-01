@@ -19,7 +19,6 @@ import com.sequenceiq.authorization.annotation.InternalOnly;
 import com.sequenceiq.authorization.annotation.ResourceCrn;
 import com.sequenceiq.authorization.annotation.ResourceName;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.request.CertificatesRotationV4Request;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.response.StackV4Response;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
@@ -93,7 +92,7 @@ public class SdxController implements SdxEndpoint {
     private CertRotationService certRotationService;
 
     @Inject
-    private ListAuthorizationService listAuthorizationService;
+    private DatalakeFiltering datalakeFiltering;
 
     @Override
     @CheckPermissionByAccount(action = AuthorizationResourceAction.CREATE_DATALAKE)
@@ -140,18 +139,17 @@ public class SdxController implements SdxEndpoint {
     @Override
     @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_DATALAKE, filter = DatalakeFiltering.class)
     public List<SdxClusterResponse> list(@FilterParam(DatalakeFiltering.ENV_NAME) String envName) {
-        List<SdxCluster> sdxClusters = listAuthorizationService.getResultAs();
+        List<SdxCluster> sdxClusters = datalakeFiltering.filterDataLakesByEnvNameOrAll(AuthorizationResourceAction.DESCRIBE_DATALAKE, envName);
         return sdxClusters.stream()
                 .map(sdx -> sdxClusterConverter.sdxClusterToResponse(sdx))
                 .collect(Collectors.toList());
     }
 
-    // TODO(authz): list filtering
     @Override
     @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_DATALAKE, filter = DatalakeFiltering.class)
     public List<SdxClusterResponse> getByEnvCrn(@ValidCrn(resource = CrnResourceDescriptor.ENVIRONMENT) @FilterParam(DatalakeFiltering.ENV_CRN)
             String envCrn) {
-        List<SdxCluster> sdxClusters = listAuthorizationService.getResultAs();
+        List<SdxCluster> sdxClusters = datalakeFiltering.filterDataLakesByEnvCrn(AuthorizationResourceAction.DESCRIBE_DATALAKE, envCrn);
         return sdxClusters.stream()
                 .map(sdx -> sdxClusterConverter.sdxClusterToResponse(sdx))
                 .collect(Collectors.toList());

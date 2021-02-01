@@ -6,18 +6,24 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import com.sequenceiq.authorization.resource.AuthorizationResource;
-import com.sequenceiq.authorization.resource.AuthorizationFiltering;
+import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
+import com.sequenceiq.authorization.service.list.AbstractAuthorizationFiltering;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
+import com.sequenceiq.cloudbreak.auth.altus.Crn;
 import com.sequenceiq.environment.environment.dto.EnvironmentDto;
 import com.sequenceiq.environment.environment.service.EnvironmentService;
 
 @Component
-public class EnvironmentFiltering implements AuthorizationFiltering<List<EnvironmentDto>> {
+public class EnvironmentFiltering extends AbstractAuthorizationFiltering<List<EnvironmentDto>> {
 
     private final EnvironmentService environmentService;
 
     public EnvironmentFiltering(EnvironmentService environmentService) {
         this.environmentService = environmentService;
+    }
+
+    public List<EnvironmentDto> filterEnvironments(AuthorizationResourceAction action) {
+        return filterResources(Crn.safeFromString(ThreadBasedUserCrnProvider.getUserCrn()), action, Map.of());
     }
 
     @Override

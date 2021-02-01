@@ -25,7 +25,6 @@ import com.sequenceiq.authorization.annotation.ResourceCrn;
 import com.sequenceiq.authorization.annotation.ResourceName;
 import com.sequenceiq.authorization.annotation.ResourceNameList;
 import com.sequenceiq.authorization.resource.AuthorizationResourceAction;
-import com.sequenceiq.authorization.service.list.ListAuthorizationService;
 import com.sequenceiq.cloudbreak.auth.ThreadBasedUserCrnProvider;
 import com.sequenceiq.cloudbreak.auth.security.internal.TenantAwareParam;
 import com.sequenceiq.cloudbreak.cloud.response.CredentialPrerequisitesResponse;
@@ -54,24 +53,23 @@ public class CredentialV1Controller extends NotificationController implements Cr
 
     private final CredentialDeleteService credentialDeleteService;
 
-    private final ListAuthorizationService listAuthorizationService;
+    private final EnvironmentCredentialFiltering environmentCredentialFiltering;
 
     public CredentialV1Controller(
             CredentialService credentialService,
             CredentialToCredentialV1ResponseConverter credentialConverter,
             CredentialDeleteService credentialDeleteService,
-            ListAuthorizationService listAuthorizationService) {
+            EnvironmentCredentialFiltering environmentCredentialFiltering) {
         this.credentialService = credentialService;
         this.credentialConverter = credentialConverter;
         this.credentialDeleteService = credentialDeleteService;
-        this.listAuthorizationService = listAuthorizationService;
+        this.environmentCredentialFiltering = environmentCredentialFiltering;
     }
 
-    // TODO(authz): list filtering
     @Override
     @FilterListBasedOnPermissions(action = AuthorizationResourceAction.DESCRIBE_CREDENTIAL, filter = EnvironmentCredentialFiltering.class)
     public CredentialResponses list() {
-        Set<Credential> credentials = listAuthorizationService.getResultAs();
+        Set<Credential> credentials = environmentCredentialFiltering.filterCredntials(AuthorizationResourceAction.DESCRIBE_CREDENTIAL);
         return new CredentialResponses(
                 credentials
                         .stream()
