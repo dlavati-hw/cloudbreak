@@ -127,15 +127,19 @@ public class AzureImageSetupService {
         azureStorageAccountService.createContainerInStorage(client, imageResourceGroupName, imageStorageName);
         if (!storageContainsImage(client, imageResourceGroupName, imageStorageName, azureImageInfo.getImageName())) {
             try {
-                LOGGER.info("Starting to copy image: {}, into storage account: {}", image.getImageName(), imageStorageName);
-                client.copyImageBlobInStorageContainer(
-                        imageResourceGroupName, imageStorageName, IMAGES_CONTAINER, image.getImageName(), azureImageInfo.getImageName());
+                copyImage(image, client, imageStorageName, imageResourceGroupName, azureImageInfo);
             } catch (CloudConnectorException e) {
                 LOGGER.warn("Something happened during start image copy.", e);
             }
         } else {
             LOGGER.info("The image already exists in the storage account.");
         }
+    }
+
+    private void copyImage(Image image, AzureClient client, String imageStorageName, String imageResourceGroupName, AzureImageInfo azureImageInfo) {
+        LOGGER.info("Starting to copy image: {}, into storage account: {}", image.getImageName(), imageStorageName);
+        client.copyImageBlobInStorageContainer(
+                imageResourceGroupName, imageStorageName, IMAGES_CONTAINER, image.getImageName(), azureImageInfo.getImageName());
     }
 
     private boolean storageContainsImage(AzureClient client, String resourceGroupName, String storageName, String imageName) {
