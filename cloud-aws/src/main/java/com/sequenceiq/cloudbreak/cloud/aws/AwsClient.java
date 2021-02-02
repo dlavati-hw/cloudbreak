@@ -40,6 +40,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.tracing.AwsTracingRequestHandler;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AuthenticatedContextView;
@@ -105,6 +106,10 @@ public class AwsClient {
         return createAccessWithClientConfiguration(awsCredential, regionName, getClientConfigurationWithMinimalRetries());
     }
 
+    public AmazonEc2RetryClient createEc2RetryClient(AwsCredentialView awsCredential, String regionName) {
+        return new AmazonEc2RetryClient(createAccess(awsCredential, regionName), retry);
+    }
+
     public AmazonEC2Client createAccessWithClientConfiguration(AwsCredentialView awsCredential, String regionName, ClientConfiguration clientConfiguration) {
         AmazonEC2Client client = isRoleAssumeRequired(awsCredential) ?
                 getAmazonEC2Client(createAwsSessionCredentialProvider(awsCredential), clientConfiguration) :
@@ -167,10 +172,6 @@ public class AwsClient {
 
     public AmazonCloudFormationRetryClient createCloudFormationRetryClient(AwsCredentialView awsCredential, String regionName) {
         return new AmazonCloudFormationRetryClient(createCloudFormationClient(awsCredential, regionName), retry);
-    }
-
-    public AmazonCloudFormationRetryClient createCloudFormationRetryClient(AmazonCloudFormationClient amazonCloudFormationClient) {
-        return new AmazonCloudFormationRetryClient(amazonCloudFormationClient, retry);
     }
 
     public AmazonElasticLoadBalancingClient createElasticLoadBalancingClient(AwsCredentialView awsCredential, String regionName) {

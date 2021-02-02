@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -75,6 +76,7 @@ import com.amazonaws.waiters.Waiter;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.connector.resource.AwsResourceConnector;
 import com.sequenceiq.cloudbreak.cloud.aws.scheduler.CustomAmazonWaiterProvider;
@@ -186,6 +188,9 @@ public class AwsRepairTest {
     @MockBean
     private AmazonEC2Client amazonEC2Client;
 
+    @Mock
+    private AmazonEc2RetryClient amazonEc2RetryClient;
+
     @MockBean
     private AmazonElasticFileSystemClient amazonElasticFileSystemClient;
 
@@ -236,13 +241,15 @@ public class AwsRepairTest {
         setup();
         setupRetryService();
         downscaleStack();
-        Mockito.reset(amazonEC2Client, amazonElasticFileSystemClient, amazonCloudFormationRetryClient, amazonAutoScalingRetryClient, persistenceNotifier);
+        Mockito.reset(amazonEC2Client, amazonEc2RetryClient, amazonElasticFileSystemClient, amazonCloudFormationRetryClient, amazonAutoScalingRetryClient,
+                persistenceNotifier);
         upscaleStack();
     }
 
     private void setup() {
         when(awsClient.createAccess(any(), anyString())).thenReturn(amazonEC2Client);
         when(awsClient.createAccess(any())).thenReturn(amazonEC2Client);
+        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEc2RetryClient);
         when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonElasticFileSystemClient);
         when(awsClient.createEfsRetryClient(any(), anyString())).thenReturn(amazonEfsRetryClient);
         when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(amazonCloudFormationRetryClient);
@@ -317,7 +324,7 @@ public class AwsRepairTest {
                                         new Instance().withInstanceId(INSTANCE_ID_2).withLifecycleState(LifecycleState.InService)))
                         ));
 
-        when(amazonEC2Client.describeVolumes(any()))
+        when(amazonEc2RetryClient.describeVolumes(any()))
                 .thenReturn(new DescribeVolumesResult().withVolumes(
                         new com.amazonaws.services.ec2.model.Volume().withVolumeId(VOLUME_ID_1).withState(VolumeState.Available),
                         new com.amazonaws.services.ec2.model.Volume().withVolumeId(VOLUME_ID_2).withState(VolumeState.Available),
@@ -382,7 +389,7 @@ public class AwsRepairTest {
     }
 
     private void downscaleStack() throws IOException {
-        when(amazonEC2Client.describeVolumes(any()))
+        when(amazonEc2RetryClient.describeVolumes(any()))
                 .thenReturn(new DescribeVolumesResult().
                         withVolumes(new com.amazonaws.services.ec2.model.Volume()
                                         .withVolumeId(VOLUME_ID_1)

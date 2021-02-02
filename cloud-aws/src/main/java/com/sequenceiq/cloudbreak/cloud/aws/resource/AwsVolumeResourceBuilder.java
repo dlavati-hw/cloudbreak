@@ -59,7 +59,6 @@ import com.sequenceiq.cloudbreak.cloud.model.ResourceStatus;
 import com.sequenceiq.cloudbreak.cloud.model.VolumeSetAttributes;
 import com.sequenceiq.cloudbreak.cloud.model.VolumeSetAttributes.Volume;
 import com.sequenceiq.cloudbreak.cloud.notification.PersistenceNotifier;
-import com.sequenceiq.cloudbreak.service.Retry;
 import com.sequenceiq.cloudbreak.util.DeviceNameGenerator;
 import com.sequenceiq.common.api.type.CommonStatus;
 import com.sequenceiq.common.api.type.ResourceType;
@@ -83,9 +82,6 @@ public class AwsVolumeResourceBuilder extends AbstractAwsComputeBuilder {
 
     @Inject
     private AwsClient awsClient;
-
-    @Inject
-    private Retry retry;
 
     private Function<Volume, InstanceBlockDeviceMappingSpecification> toInstanceBlockDeviceMappingSpecification = volume -> {
         EbsInstanceBlockDeviceSpecification device = new EbsInstanceBlockDeviceSpecification()
@@ -381,7 +377,7 @@ public class AwsVolumeResourceBuilder extends AbstractAwsComputeBuilder {
     private AmazonEc2RetryClient getAmazonEC2Client(AuthenticatedContext auth) {
         AwsCredentialView credentialView = new AwsCredentialView(auth.getCloudCredential());
         String regionName = auth.getCloudContext().getLocation().getRegion().value();
-        return new AmazonEc2RetryClient(awsClient.createAccess(credentialView, regionName), retry);
+        return awsClient.createEc2RetryClient(credentialView, regionName);
     }
 
     @Override

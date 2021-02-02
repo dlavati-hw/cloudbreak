@@ -32,7 +32,6 @@ import com.sequenceiq.cloudbreak.cloud.model.Group;
 import com.sequenceiq.cloudbreak.cloud.model.Image;
 import com.sequenceiq.cloudbreak.cloud.model.ResourceStatus;
 import com.sequenceiq.cloudbreak.cloud.model.VolumeSetAttributes;
-import com.sequenceiq.cloudbreak.service.Retry;
 import com.sequenceiq.common.api.type.CommonStatus;
 import com.sequenceiq.common.api.type.ResourceType;
 
@@ -47,9 +46,6 @@ public class AwsAttachmentResourceBuilder extends AbstractAwsComputeBuilder {
 
     @Inject
     private AwsClient awsClient;
-
-    @Inject
-    private Retry retry;
 
     @Override
     public List<CloudResource> create(AwsContext context, long privateId, AuthenticatedContext auth, Group group, Image image) {
@@ -152,7 +148,7 @@ public class AwsAttachmentResourceBuilder extends AbstractAwsComputeBuilder {
     private AmazonEc2RetryClient getAmazonEc2RetryClient(AuthenticatedContext auth) {
         AwsCredentialView credentialView = new AwsCredentialView(auth.getCloudCredential());
         String regionName = auth.getCloudContext().getLocation().getRegion().value();
-        return new AmazonEc2RetryClient(awsClient.createAccess(credentialView, regionName), retry);
+        return awsClient.createEc2RetryClient(credentialView, regionName);
     }
 
     @Override

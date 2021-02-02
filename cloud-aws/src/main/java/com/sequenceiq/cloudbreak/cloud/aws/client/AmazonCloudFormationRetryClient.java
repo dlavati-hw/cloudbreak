@@ -15,6 +15,7 @@ import com.amazonaws.services.cloudformation.model.ListStackResourcesRequest;
 import com.amazonaws.services.cloudformation.model.ListStackResourcesResult;
 import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 import com.amazonaws.services.cloudformation.model.UpdateStackResult;
+import com.amazonaws.services.cloudformation.waiters.AmazonCloudFormationWaiters;
 import com.sequenceiq.cloudbreak.service.Retry;
 
 public class AmazonCloudFormationRetryClient extends AmazonRetryClient {
@@ -54,5 +55,9 @@ public class AmazonCloudFormationRetryClient extends AmazonRetryClient {
 
     public ListStackResourcesResult listStackResources(ListStackResourcesRequest request) {
         return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.listStackResources(request)));
+    }
+
+    public AmazonCloudFormationWaiters waiters() {
+        return client.waiters();
     }
 }

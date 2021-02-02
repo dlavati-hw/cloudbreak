@@ -18,7 +18,6 @@ import com.amazonaws.services.autoscaling.model.DeleteLaunchConfigurationRequest
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.ResumeProcessesRequest;
 import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -71,7 +70,7 @@ public class AwsTerminateService {
         AuthenticatedContextView authenticatedContextView = new AuthenticatedContextView(ac);
         String regionName = authenticatedContextView.getRegion();
         AmazonEC2Client amazonEC2Client = authenticatedContextView.getAmazonEC2Client();
-        AmazonCloudFormationClient amazonCloudFormationClient = awsClient.createCloudFormationClient(credentialView, regionName);
+        AmazonCloudFormationRetryClient amazonCloudFormationClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
 
         awsCloudWatchService.deleteCloudWatchAlarmsForSystemFailures(stack, regionName, credentialView);
         waitAndDeleteCloudformationStack(ac, stack, resources, amazonCloudFormationClient);
@@ -83,18 +82,17 @@ public class AwsTerminateService {
     }
 
     private void waitAndDeleteCloudformationStack(AuthenticatedContext ac, CloudStack stack, List<CloudResource> resources,
-            AmazonCloudFormationClient amazonCloudFormationClient) {
+            AmazonCloudFormationRetryClient amazonCloudFormationClient) {
         CloudResource stackResource = cfStackUtil.getCloudFormationStackResource(resources);
         if (stackResource == null) {
             LOGGER.debug("No cloudformation stack in resources");
             return;
         }
         String cFStackName = stackResource.getName();
-        AmazonCloudFormationRetryClient cfRetryClient = awsClient.createCloudFormationRetryClient(amazonCloudFormationClient);
         LOGGER.debug("Search and wait stack with name: {}", cFStackName);
         DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(cFStackName);
         try {
-            retryService.testWith2SecDelayMax15Times(() -> isStackExist(cfRetryClient, cFStackName, describeStacksRequest));
+            retryService.testWith2SecDelayMax15Times(() -> isStackExist(amazonCloudFormationClient, cFStackName, describeStacksRequest));
         } catch (ActionFailedException ignored) {
             LOGGER.debug("Stack not found with name: {}", cFStackName);
             return;
@@ -104,8 +102,7 @@ public class AwsTerminateService {
         LOGGER.debug("Delete cloudformation stack from resources");
         DeleteStackRequest deleteStackRequest = new DeleteStackRequest().withStackName(cFStackName);
         try {
-            retryService.testWith2SecDelayMax5Times(() -> isStackDeleted(cfRetryClient, amazonCloudFormationClient,
-                describeStacksRequest, deleteStackRequest));
+            retryService.testWith2SecDelayMax5Times(() -> isStackDeleted(amazonCloudFormationClient, describeStacksRequest, deleteStackRequest));
         } catch (Exception e) {
             LOGGER.debug("Cloudformation stack delete failed ", e);
             throw new CloudConnectorException(e.getMessage(), e);
@@ -125,10 +122,10 @@ public class AwsTerminateService {
         return Boolean.TRUE;
     }
 
-    private Boolean isStackDeleted(AmazonCloudFormationRetryClient cfRetryClient, AmazonCloudFormationClient amazonCloudFormationClient,
-            DescribeStacksRequest describeStacksRequest, DeleteStackRequest deleteStackRequest) {
+    private Boolean isStackDeleted(AmazonCloudFormationRetryClient cfRetryClient, DescribeStacksRequest describeStacksRequest,
+            DeleteStackRequest deleteStackRequest) {
         cfRetryClient.deleteStack(deleteStackRequest);
-        Waiter<DescribeStacksRequest> stackDeleteCompleteWaiter = amazonCloudFormationClient.waiters().stackDeleteComplete();
+        Waiter<DescribeStacksRequest> stackDeleteCompleteWaiter = cfRetryClient.waiters().stackDeleteComplete();
         try {
             LOGGER.debug("Waiting for final state of CloudFormation deletion attempt.");
             WaiterParameters<DescribeStacksRequest> describeStacksRequestWaiterParameters = new WaiterParameters<>(describeStacksRequest)

@@ -24,7 +24,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.waiters.AmazonCloudFormationWaiters;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -70,9 +69,6 @@ public class AwsTerminateServiceTest {
     private CloudStack cloudStack;
 
     @Mock
-    private AmazonCloudFormationClient cloudFormationClient;
-
-    @Mock
     private AmazonCloudFormationRetryClient cloudFormationRetryClient;
 
     @Mock
@@ -113,8 +109,7 @@ public class AwsTerminateServiceTest {
 
     @Test
     public void testTerminateWhenCloudformationStackTerminated() {
-        when(awsClient.createCloudFormationClient(any(), any())).thenReturn(cloudFormationClient);
-        when(awsClient.createCloudFormationRetryClient(any())).thenReturn(cloudFormationRetryClient);
+        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
         CloudResource cfStackResource = mock(CloudResource.class);
         when(cfStackResource.getName()).thenReturn("stackName");
         when(cfStackUtil.getCloudFormationStackResource(any())).thenReturn(cfStackResource);
@@ -196,8 +191,7 @@ public class AwsTerminateServiceTest {
         when(cloudStack.getGroups()).thenReturn(List.of(group));
         when(cfStackUtil.getCloudFormationStackResource(any())).thenReturn(cf);
         when(cfStackUtil.getAutoscalingGroupName(any(), anyString(), anyString())).thenReturn("alma");
-        when(awsClient.createCloudFormationRetryClient(any())).thenReturn(cloudFormationRetryClient);
-        when(awsClient.createCloudFormationClient(any(), any())).thenReturn(cloudFormationClient);
+        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
         when(awsClient.createAutoScalingClient(any(), any())).thenReturn(amazonAutoScalingClient);
         when(awsClient.createAutoScalingRetryClient(any(), any())).thenReturn(amazonAutoScalingRetryClient);
         when(amazonAutoScalingRetryClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
