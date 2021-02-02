@@ -58,6 +58,7 @@ import com.sequenceiq.cloudbreak.cloud.scheduler.CancellationException;
 import com.sequenceiq.cloudbreak.cluster.service.ClouderaManagerProductsProvider;
 import com.sequenceiq.cloudbreak.cluster.service.ClusterComponentConfigProvider;
 import com.sequenceiq.cloudbreak.cm.client.retry.ClouderaManagerApiFactory;
+import com.sequenceiq.cloudbreak.cm.commands.SyncApiCommandPollerConfig;
 import com.sequenceiq.cloudbreak.cm.polling.ClouderaManagerPollingServiceProvider;
 import com.sequenceiq.cloudbreak.cm.polling.PollingResultErrorHandler;
 import com.sequenceiq.cloudbreak.cm.util.TestUtil;
@@ -152,6 +153,9 @@ class ClouderaManagerModificationServiceTest {
     @Mock
     private PollingResultErrorHandler pollingResultErrorHandler;
 
+    @Mock
+    private SyncApiCommandPollerConfig syncApiCommandPollerConfig;
+
     @Spy
     private ClouderaManagerProductsProvider clouderaManagerProductsProvider;
 
@@ -167,6 +171,7 @@ class ClouderaManagerModificationServiceTest {
         cluster = new Cluster();
         cluster.setId(CLUSTER_ID);
         stack.setCluster(cluster);
+        stack.setResourceCrn("crn:cdp:cloudbreak:us-west-1:someone:stack:12345");
         hostGroup = new HostGroup();
         hostGroup.setName(HOST_GROUP_NAME);
     }
@@ -450,7 +455,7 @@ class ClouderaManagerModificationServiceTest {
         String expectedMessage = "Cluster was terminated while waiting for config deploy";
         when(clouderaManagerPollingServiceProvider.startPollingCmClientConfigDeployment(any(), any(), any())).thenReturn(pollingResult);
         doThrow(new CancellationException(expectedMessage)).when(pollingResultErrorHandler).handlePollingResult(eq(pollingResult), any(), any());
-        CancellationException actual = assertThrows(CancellationException.class, () -> underTest.pollDeployConfig(apiCommand));
+        CancellationException actual = assertThrows(CancellationException.class, () -> underTest.pollDeployConfig(apiCommand.getId()));
         assertEquals(expectedMessage, actual.getMessage());
     }
 
@@ -461,7 +466,7 @@ class ClouderaManagerModificationServiceTest {
         when(clouderaManagerPollingServiceProvider.startPollingCmClientConfigDeployment(any(), any(), any())).thenReturn(pollingResult);
         String expectedMessage = "Timeout while Cloudera Manager was config deploying services.";
         doThrow(new CloudbreakException(expectedMessage)).when(pollingResultErrorHandler).handlePollingResult(eq(pollingResult), any(), any());
-        CloudbreakException actual = assertThrows(CloudbreakException.class, () -> underTest.pollDeployConfig(apiCommand));
+        CloudbreakException actual = assertThrows(CloudbreakException.class, () -> underTest.pollDeployConfig(apiCommand.getId()));
         assertEquals(expectedMessage, actual.getMessage());
     }
 

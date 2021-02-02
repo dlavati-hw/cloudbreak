@@ -27,6 +27,7 @@ import com.sequenceiq.cloudbreak.client.HttpClientConfig;
 import com.sequenceiq.cloudbreak.cm.client.ClouderaManagerApiClientProvider;
 import com.sequenceiq.cloudbreak.cm.client.ClouderaManagerClientInitException;
 import com.sequenceiq.cloudbreak.cm.client.retry.ClouderaManagerApiFactory;
+import com.sequenceiq.cloudbreak.cm.commands.SyncApiCommandPollerConfig;
 import com.sequenceiq.cloudbreak.cm.polling.ClouderaManagerPollingServiceProvider;
 import com.sequenceiq.cloudbreak.domain.stack.Stack;
 import com.sequenceiq.cloudbreak.domain.stack.cluster.Cluster;
@@ -71,6 +72,12 @@ public class ClouderaManagerKerberosServiceTest {
     @Mock
     private ClouderaManagerConfigService clouderaManagerConfigService;
 
+    @Mock
+    private SyncApiCommandPollerConfig syncApiCommandPollerConfig;
+
+    @Mock
+    private ClouderaManagerSyncApiCommandIdProvider clouderaManagerSyncApiCommandIdProvider;
+
     @InjectMocks
     private ClouderaManagerKerberosService underTest;
 
@@ -89,6 +96,7 @@ public class ClouderaManagerKerberosServiceTest {
         cluster.setCloudbreakUser("user");
         cluster.setCloudbreakPassword("password");
         stack.setCluster(cluster);
+        stack.setResourceCrn("crn:cdp:cloudbreak:us-west-1:someone:stack:12345");
         clientConfig = new HttpClientConfig("1.2.3.4", null, null, null);
         when(clouderaManagerApiClientProvider.getClient(anyInt(), anyString(), anyString(), any())).thenReturn(client);
         when(clouderaManagerApiFactory.getClouderaManagerResourceApi(client)).thenReturn(clouderaManagerResourceApi);

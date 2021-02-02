@@ -2,6 +2,8 @@ package com.sequenceiq.cloudbreak.cm;
 
 import static com.sequenceiq.cloudbreak.cmtemplate.CMRepositoryVersionUtil.CLOUDERAMANAGER_VERSION_7_1_0;
 
+import java.math.BigDecimal;
+
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -19,6 +21,7 @@ import com.sequenceiq.cloudbreak.client.HttpClientConfig;
 import com.sequenceiq.cloudbreak.cm.client.ClouderaManagerApiClientProvider;
 import com.sequenceiq.cloudbreak.cm.client.ClouderaManagerClientInitException;
 import com.sequenceiq.cloudbreak.cm.client.retry.ClouderaManagerApiFactory;
+import com.sequenceiq.cloudbreak.cm.commands.SyncApiCommandPollerConfig;
 import com.sequenceiq.cloudbreak.cm.polling.ClouderaManagerPollingServiceProvider;
 import com.sequenceiq.cloudbreak.domain.stack.Stack;
 import com.sequenceiq.cloudbreak.domain.stack.cluster.Cluster;
@@ -49,6 +52,12 @@ public class ClouderaManagerKerberosService {
     @Inject
     private ClouderaManagerConfigService clouderaManagerConfigService;
 
+    @Inject
+    private SyncApiCommandPollerConfig syncApiCommandPollerConfig;
+
+    @Inject
+    private ClouderaManagerSyncApiCommandIdProvider clouderaManagerSyncApiCommandIdProvider;
+
     public void configureKerberosViaApi(ApiClient client, HttpClientConfig clientConfig, Stack stack, KerberosConfig kerberosConfig)
             throws ApiException, CloudbreakException {
         Cluster cluster = stack.getCluster();
@@ -61,8 +70,16 @@ public class ClouderaManagerKerberosService {
             clouderaManagerPollingServiceProvider.startPollingCmKerberosJob(stack, client, configureForKerberos.getId());
             ApiCommand generateCredentials = clouderaManagerResourceApi.generateCredentialsCommand();
             clouderaManagerPollingServiceProvider.startPollingCmKerberosJob(stack, client, generateCredentials.getId());
-            ApiCommand deployClusterConfig = clustersResourceApi.deployClientConfig(cluster.getName());
-            clouderaManagerPollingServiceProvider.startPollingCmKerberosJob(stack, client, deployClusterConfig.getId());
+            BigDecimal deployClusterConfigId;
+            if (syncApiCommandPollerConfig.isSyncApiCommandPollingEnaabled(stack.getResourceCrn())) {
+                deployClusterConfigId = clouderaManagerSyncApiCommandIdProvider.executeSyncApiCommandAndGetCommandId(
+                        syncApiCommandPollerConfig.getDeployClusterClientConfigCommandName(), clustersResourceApi, stack, null,
+                        () -> clustersResourceApi.deployClientConfig(cluster.getName()));
+            } else {
+                ApiCommand deployClusterConfig = clustersResourceApi.deployClientConfig(cluster.getName());
+                deployClusterConfigId = deployClusterConfig.getId();
+            }
+            clouderaManagerPollingServiceProvider.startPollingCmKerberosJob(stack, client, deployClusterConfigId);
             modificationService.startCluster();
         }
     }
