@@ -237,6 +237,7 @@ public class AwsLaunchService {
     void updateCloudformationWithLoadBalancers(AuthenticatedContext ac, CloudStack stack, PersistenceNotifier resourceNotifier,
             ModelContext modelContext, List<CloudResource> instances, String regionName, AmazonEC2Client amazonEC2Client,
             Network network, AwsNetworkView awsNetworkView, boolean mapPublicIpOnLaunch) {
+        //todo: add comments for this series of methods
 
         List<CloudLoadBalancer> cloudLoadBalancers = stack.getLoadBalancers();
         if (!cloudLoadBalancers.isEmpty()) {
@@ -258,6 +259,16 @@ public class AwsLaunchService {
         }
     }
 
+    /**
+     * Wrapper method for the conversion of {@code CloudLoadBalancer}s to {@code AwsLoadBalancer}s.
+     *
+     * @see com.sequenceiq.cloudbreak.cloud.aws.connector.resource.AwsLaunchService#convertLoadBalancer()
+     * @param cloudLoadBalancers the load balancers to be converted.
+     * @param instances passed through to conversion method.
+     * @param awsNetworkView passed through to conversion method.
+     * @param amazonEC2Client passed through to conversion method.
+     * @return list of AWS specific load balancers, from the more generic {@code CloudLoadBalancer}s.
+     */
     private List<AwsLoadBalancer> getAwsLoadBalancers(List<CloudLoadBalancer> cloudLoadBalancers, List<CloudResource> instances,
             AwsNetworkView awsNetworkView, AmazonEC2Client amazonEC2Client) {
         LOGGER.debug("Converting internal load balancer model to AWS cloud provider model.");
