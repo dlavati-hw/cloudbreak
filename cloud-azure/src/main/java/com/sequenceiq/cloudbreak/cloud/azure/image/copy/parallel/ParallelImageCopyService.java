@@ -1,9 +1,13 @@
 package com.sequenceiq.cloudbreak.cloud.azure.image.copy.parallel;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
+import static com.sequenceiq.cloudbreak.cloud.azure.image.copy.parallel.ParallelImageCopyParametersService.CHUNK_SIZE;
+
 import java.util.List;
 
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.azure.core.http.rest.Response;
@@ -25,11 +29,13 @@ import reactor.core.publisher.Mono;
 @Service
 public class ParallelImageCopyService {
 
-    private static final long CHUNK_SIZE = 4194304L;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParallelImageCopyService.class);
 
-    private static final int BLOB_LEASE_DURATION_SECONDS = 60;
+    @Inject
+    private ParallelImageCopyParametersService imageCopyParameters;
 
-    private final Duration IMAGE_COPY_TIMEOUT = Duration.of(30, ChronoUnit.MINUTES);
+    @Inject
+    private ResponseCodeHandlerService responseCodeHandlerService;
 
     public void copyImage(Image image, AzureClient client, String imageStorageName, String imageResourceGroupName, AzureImageInfo azureImageInfo) {
 
@@ -43,7 +49,7 @@ public class ParallelImageCopyService {
                 .flatMap(blobPropertiesResponse -> createImage(pageBlobAsyncClient, imageCopyContext, blobPropertiesResponse))
                 .flatMap(pageBlobItemResponse -> startLeaseImage(blobLeaseAsyncClient))
                 .flatMap(leaseId -> copyImageChunks(sourceBlob, CHUNK_SIZE, pageBlobAsyncClient, blobLeaseAsyncClient, imageCopyContext, leaseId))
-                .timeout(IMAGE_COPY_TIMEOUT)
+                .timeout(imageCopyParameters.getImageCopyTimeout())
                 .subscribe();
     }
 
@@ -55,33 +61,34 @@ public class ParallelImageCopyService {
 
         return Mono.just(new CopyTasks(pageBlobAsyncClient, sourceBlob, pageBlobRequestConditions))
                 .flatMap(copyTasks -> copyTasks.createAll(pageRanges, blobLeaseAsyncClient))
-                .doOnError(e -> System.out.println("Final error: " + e))
-                .doFinally(s -> System.out.println("Finally called, signal type:" + s));
+                .doOnError(e -> LOGGER.warn("Final error: "))
+                .doFinally(s -> LOGGER.info("Finally called, signal type: {}", s));
     }
 
     private Mono<String> startLeaseImage(BlobLeaseAsyncClient blobLeaseAsyncClient) {
-        return blobLeaseAsyncClient.acquireLease(BLOB_LEASE_DURATION_SECONDS);
+        return blobLeaseAsyncClient.acquireLease(imageCopyParameters.getBlobLeaseDurationSeconds());
     }
 
     private Mono<Response<PageBlobItem>> createImage(PageBlobAsyncClient pageBlobAsyncClient, ImageCopyContext imageCopyContext, Response<BlobProperties> blobPropertiesResponse) {
         long fileSize = blobPropertiesResponse.getValue().getBlobSize();
         imageCopyContext.setFilesize(fileSize);
-        return pageBlobAsyncClient.createWithResponse(fileSize, 0L, null, null, null);
+        return pageBlobAsyncClient
+                .createWithResponse(fileSize, 0L, null, null, null)
+                .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
+                .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum());
     }
 
     private Mono<Response<BlobProperties>> getPublicBlobPropertiesAsync(Mono<String> sourceBlobUrl) {
         return sourceBlobUrl.flatMap(this::getPublicBlobProperties)
-                .doOnSuccess(resp -> {
-                    if (resp.getStatusCode() == 503) {
-                        throw new RuntimeException("Return code is 503");
-                    }
-                })
-                .retryBackoff(10, Duration.of(1, ChronoUnit.SECONDS), Duration.of(10, ChronoUnit.SECONDS));
+                .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
+                .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum());
     }
 
     private Mono<Response<BlobProperties>> getPublicBlobProperties(String sourceBlobUrl) {
         BlobAsyncClient blobClient = new BlobClientBuilder().endpoint(sourceBlobUrl).buildAsyncClient();
-        return blobClient.getPropertiesWithResponse(null);
+        return blobClient.getPropertiesWithResponse(null)
+                .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
+                .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum());
     }
 
 }

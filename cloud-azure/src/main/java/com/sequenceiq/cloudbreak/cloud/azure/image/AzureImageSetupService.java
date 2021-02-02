@@ -20,6 +20,7 @@ import com.sequenceiq.cloudbreak.cloud.azure.AzureResourceGroupMetadataProvider;
 import com.sequenceiq.cloudbreak.cloud.azure.AzureStorage;
 import com.sequenceiq.cloudbreak.cloud.azure.AzureStorageAccountService;
 import com.sequenceiq.cloudbreak.cloud.azure.client.AzureClient;
+import com.sequenceiq.cloudbreak.cloud.azure.image.copy.ImageCopyService;
 import com.sequenceiq.cloudbreak.cloud.azure.util.CustomVMImageNameProvider;
 import com.sequenceiq.cloudbreak.cloud.azure.view.AzureCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -55,6 +56,9 @@ public class AzureImageSetupService {
 
     @Inject
     private CustomVMImageNameProvider customVMImageNameProvider;
+
+    @Inject
+    private ImageCopyService imageCopyService;
 
     public ImageStatusResult checkImageStatus(AuthenticatedContext ac, CloudStack stack, Image image) {
         CloudContext cloudContext = ac.getCloudContext();
@@ -127,19 +131,13 @@ public class AzureImageSetupService {
         azureStorageAccountService.createContainerInStorage(client, imageResourceGroupName, imageStorageName);
         if (!storageContainsImage(client, imageResourceGroupName, imageStorageName, azureImageInfo.getImageName())) {
             try {
-                copyImage(image, client, imageStorageName, imageResourceGroupName, azureImageInfo);
+                imageCopyService.copyImage(image, client, imageStorageName, imageResourceGroupName, azureImageInfo);
             } catch (CloudConnectorException e) {
                 LOGGER.warn("Something happened during start image copy.", e);
             }
         } else {
             LOGGER.info("The image already exists in the storage account.");
         }
-    }
-
-    private void copyImage(Image image, AzureClient client, String imageStorageName, String imageResourceGroupName, AzureImageInfo azureImageInfo) {
-        LOGGER.info("Starting to copy image: {}, into storage account: {}", image.getImageName(), imageStorageName);
-        client.copyImageBlobInStorageContainer(
-                imageResourceGroupName, imageStorageName, IMAGES_CONTAINER, image.getImageName(), azureImageInfo.getImageName());
     }
 
     private boolean storageContainsImage(AzureClient client, String resourceGroupName, String storageName, String imageName) {
