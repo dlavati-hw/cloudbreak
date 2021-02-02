@@ -72,6 +72,9 @@ public class AwsRdsLaunchService {
     @Inject
     private AwsStackRequestHelper awsStackRequestHelper;
 
+    @Inject
+    private AwsCloudFormationErrorMessageProvider awsCloudFormationErrorMessageProvider;
+
     public List<CloudResourceStatus> launch(AuthenticatedContext ac, DatabaseStack stack, PersistenceNotifier resourceNotifier) {
         String cFStackName = cfStackUtil.getCfStackName(ac);
         AwsCredentialView credentialView = new AwsCredentialView(ac.getCloudCredential());
@@ -110,7 +113,7 @@ public class AwsRdsLaunchService {
         Waiter<DescribeStacksRequest> creationWaiter = cfClient.waiters().stackCreateComplete();
         StackCancellationCheck stackCancellationCheck = new StackCancellationCheck(ac.getCloudContext().getId());
         run(creationWaiter, describeStacksRequest, stackCancellationCheck, String.format("RDS CloudFormation stack %s creation failed", cFStackName),
-                () -> AwsCloudFormationErrorMessageProvider.getErrorReason(cfRetryClient, cFStackName, CREATE_FAILED));
+                () -> awsCloudFormationErrorMessageProvider.getErrorReason(ac, cFStackName, CREATE_FAILED));
 
         List<CloudResource> databaseResources = getCreatedOutputs(ac, stack, cFStackName, cfRetryClient, resourceNotifier, useSslEnforcement);
         databaseResources.forEach(dbr -> resourceNotifier.notifyAllocation(dbr, ac.getCloudContext()));

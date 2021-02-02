@@ -89,6 +89,9 @@ public class AwsNetworkConnector implements DefaultNetworkConnector {
     private AwsTaggingService awsTaggingService;
 
     @Inject
+    private AwsCloudFormationErrorMessageProvider awsCloudFormationErrorMessageProvider;
+
+    @Inject
     private Map<SubnetFilterStrategyType, SubnetFilterStrategy> subnetFilterStrategyMap;
 
     @Override
@@ -203,7 +206,8 @@ public class AwsNetworkConnector implements DefaultNetworkConnector {
     private CreatedCloudNetwork getCreatedNetworkWithPolling(NetworkCreationRequest networkRequest, AwsCredentialView credentialView,
         AmazonCloudFormationRetryClient cloudFormationRetryClient, List<SubnetRequest> subnetRequests) {
 
-        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, networkRequest.getRegion().value());
+        String regionName = networkRequest.getRegion().value();
+        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, regionName);
         Waiter<DescribeStacksRequest> creationWaiter = cfClient.waiters().stackCreateComplete();
         String cfStackName = networkRequest.getStackName();
         DescribeStacksRequest stackRequestWithStackId = new DescribeStacksRequest().withStackName(cfStackName);
@@ -211,7 +215,7 @@ public class AwsNetworkConnector implements DefaultNetworkConnector {
 
         run(creationWaiter, stackRequestWithStackId, environmentCancellationCheck,
                 String.format("Network creation failed (cloudformation stack: %s).", cfStackName),
-                () -> AwsCloudFormationErrorMessageProvider.getErrorReason(cloudFormationRetryClient, cfStackName, ResourceStatus.CREATE_FAILED));
+                () -> awsCloudFormationErrorMessageProvider.getErrorReason(credentialView, regionName, cfStackName, ResourceStatus.CREATE_FAILED));
 
         return getCreatedCloudNetwork(cloudFormationRetryClient, networkRequest, subnetRequests);
     }
@@ -247,18 +251,19 @@ public class AwsNetworkConnector implements DefaultNetworkConnector {
     public void deleteNetworkWithSubnets(NetworkDeletionRequest networkDeletionRequest) {
         if (!networkDeletionRequest.isExisting()) {
             AwsCredentialView credentialView = new AwsCredentialView(networkDeletionRequest.getCloudCredential());
-            AmazonCloudFormationRetryClient cloudFormationRetryClient = getCloudFormationRetryClient(credentialView, networkDeletionRequest.getRegion());
+            String regionName = networkDeletionRequest.getRegion();
+            AmazonCloudFormationRetryClient cloudFormationRetryClient = getCloudFormationRetryClient(credentialView, regionName);
             DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
             String stackName = networkDeletionRequest.getStackName();
             deleteStackRequest.setStackName(stackName);
             cloudFormationRetryClient.deleteStack(deleteStackRequest);
-            AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, networkDeletionRequest.getRegion());
+            AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, regionName);
             Waiter<DescribeStacksRequest> deletionWaiter = cfClient.waiters().stackDeleteComplete();
             LOGGER.debug("CloudFormation stack deletion request sent with stack name: '{}' ", stackName);
             DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackName);
             run(deletionWaiter, describeStacksRequest, null,
                     String.format("Network delete failed (cloudformation: %s)", stackName),
-                    () -> AwsCloudFormationErrorMessageProvider.getErrorReason(cloudFormationRetryClient, stackName, ResourceStatus.DELETE_FAILED));
+                    () -> awsCloudFormationErrorMessageProvider.getErrorReason(credentialView, regionName, stackName, ResourceStatus.DELETE_FAILED));
         }
     }
 

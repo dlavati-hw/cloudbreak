@@ -119,6 +119,9 @@ public class AwsLaunchService {
     @Inject
     private AwsSubnetIgwExplorer awsSubnetIgwExplorer;
 
+    @Inject
+    private AwsCloudFormationErrorMessageProvider awsCloudFormationErrorMessageProvider;
+
     public List<CloudResourceStatus> launch(AuthenticatedContext ac, CloudStack stack, PersistenceNotifier resourceNotifier,
             AdjustmentType adjustmentType, Long threshold) throws Exception {
         createKeyPair(ac, stack);
@@ -156,7 +159,7 @@ public class AwsLaunchService {
         Waiter<DescribeStacksRequest> creationWaiter = cfClient.waiters().stackCreateComplete();
         StackCancellationCheck stackCancellationCheck = new StackCancellationCheck(ac.getCloudContext().getId());
         run(creationWaiter, describeStacksRequest, stackCancellationCheck, String.format("CloudFormation stack %s creation failed.", cFStackName),
-                () -> AwsCloudFormationErrorMessageProvider.getErrorReason(cfRetryClient, cFStackName, ResourceStatus.CREATE_FAILED));
+                () -> awsCloudFormationErrorMessageProvider.getErrorReason(ac, cFStackName, ResourceStatus.CREATE_FAILED));
 
         List<CloudResource> networkResources = saveGeneratedSubnet(ac, stack, cFStackName, cfRetryClient, resourceNotifier);
         suspendAutoscalingGoupsWhenNewInstancesAreReady(ac, stack);
@@ -410,7 +413,7 @@ public class AwsLaunchService {
         Waiter<DescribeStacksRequest> updateWaiter = cfClient.waiters().stackUpdateComplete();
         StackCancellationCheck stackCancellationCheck = new StackCancellationCheck(ac.getCloudContext().getId());
         run(updateWaiter, describeStacksRequest, stackCancellationCheck, String.format("CloudFormation stack %s update failed.", cFStackName),
-            () -> AwsCloudFormationErrorMessageProvider.getErrorReason(cfRetryClient, cFStackName, ResourceStatus.UPDATE_FAILED));
+            () -> awsCloudFormationErrorMessageProvider.getErrorReason(ac, cFStackName, ResourceStatus.UPDATE_FAILED));
 
         return cfRetryClient.listStackResources(awsStackRequestHelper.createListStackResourcesRequest(cFStackName));
     }
