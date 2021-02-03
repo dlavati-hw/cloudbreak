@@ -5,6 +5,7 @@ import static com.sequenceiq.datalake.entity.DatalakeStatusEnum.DELETED;
 import static com.sequenceiq.datalake.entity.DatalakeStatusEnum.DELETED_ON_PROVIDER_SIDE;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -50,20 +51,27 @@ public class SdxStatusService {
 
     public void setStatusForDatalakeAndNotify(DatalakeStatusEnum status, String statusReason, SdxCluster sdxCluster) {
         setStatusForDatalake(status, statusReason, sdxCluster);
-        sdxNotificationService.send(status.getDefaultResourceEvent(), sdxCluster);
+        sdxNotificationService.send(status.getDefaultResourceEvent(), Collections.singleton(sdxCluster.getClusterName()), sdxCluster);
     }
 
     public SdxCluster setStatusForDatalakeAndNotify(DatalakeStatusEnum status, String statusReason, Long datalakeId) {
         return sdxClusterRepository.findById(datalakeId).map(cluster -> {
             setStatusForDatalake(status, statusReason, cluster);
-            sdxNotificationService.send(status.getDefaultResourceEvent(), cluster);
+            sdxNotificationService.send(status.getDefaultResourceEvent(), Collections.singleton(cluster.getClusterName()), cluster);
             return cluster;
         }).orElseThrow(() -> new NotFoundException("SdxCluster was not found with ID: " + datalakeId));
     }
 
-    public void setStatusForDatalakeAndNotify(DatalakeStatusEnum status, ResourceEvent event, String statusReason, SdxCluster sdxCluster) {
+    public void setStatusForDatalakeAndNotify(DatalakeStatusEnum status, ResourceEvent event, String statusReason,
+            SdxCluster sdxCluster) {
         setStatusForDatalake(status, statusReason, sdxCluster);
         sdxNotificationService.send(event, sdxCluster);
+    }
+
+    public void setStatusForDatalakeAndNotify(DatalakeStatusEnum status, ResourceEvent event, Collection<?> messageArgs, String statusReason,
+            SdxCluster sdxCluster) {
+        setStatusForDatalake(status, statusReason, sdxCluster);
+        sdxNotificationService.send(event, messageArgs, sdxCluster);
     }
 
     public SdxCluster setStatusForDatalakeAndNotify(DatalakeStatusEnum status, ResourceEvent event, String statusReason, Long datalakeId) {
