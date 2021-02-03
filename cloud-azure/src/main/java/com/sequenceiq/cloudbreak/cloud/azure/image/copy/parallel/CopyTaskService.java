@@ -1,12 +1,10 @@
 package com.sequenceiq.cloudbreak.cloud.azure.image.copy.parallel;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,6 +13,7 @@ import com.azure.core.http.rest.Response;
 import com.azure.storage.blob.models.PageBlobItem;
 import com.azure.storage.blob.models.PageRange;
 import com.azure.storage.blob.specialized.BlobLeaseAsyncClient;
+import com.sequenceiq.cloudbreak.common.service.Clock;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,6 +28,9 @@ public class CopyTaskService {
 
     @Inject
     private ResponseCodeHandlerService responseCodeHandlerService;
+
+    @Inject
+    private Clock clock;
 
     public Mono<Void> createAll(CopyTaskParameters copyTaskParameters) {
 
@@ -62,28 +64,35 @@ public class CopyTaskService {
                                 .flatMap(pageRange -> sendToServer(copyTaskParameters, pageRange))
                                 .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
                                 .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum())
-                                .flatMap(copyResp -> calculateProgress(copyTaskParameters, successCounter))
+                                .flatMap(copyResp -> evaluateProgress(copyTaskParameters, successCounter))
                                 .then()
                         , imageCopyParameters.getConcurrency(), imageCopyParameters.getPrefetch())
+                .doOnError(e -> {
+                    LOGGER.warn("Image copy failed {} with exception {}", copyTaskParameters.getSourceBlobUrl(), e);
+                    reportProgress(copyTaskParameters,
+                            ParallelCopyProgressInfo.failed(successCounter.get(), copyTaskParameters.getCopyRanges().size(), e.getMessage(), clock.getCurrentTimeMillis()));
+                })
                 .doOnComplete(() -> LOGGER.info("Image copy completed successfully"))
                 .doFinally(s -> imageCopyRunning.set(false))
                 .then();
     }
 
-    @NotNull
-    private Mono<Response<Void>> calculateProgress(CopyTaskParameters copyTaskParameters, AtomicLong successCounter) {
-        Long copiedCounter = successCounter.incrementAndGet();
-        long totalTasks = copyTaskParameters.getCopyRanges().size();
-        if (copiedCounter % 100 == 0 || copiedCounter == totalTasks) {
-            return sendProgressInfo(copyTaskParameters, copiedCounter / (double) totalTasks * 100);
+
+    private Mono<Response<Void>> evaluateProgress(CopyTaskParameters copyTaskParameters, AtomicLong successCounter) {
+        long copiedCounter = successCounter.incrementAndGet();
+        int totalTasks = copyTaskParameters.getCopyRanges().size();
+        if (copiedCounter % 100 == 0) {
+            return reportProgress(copyTaskParameters, ParallelCopyProgressInfo.inProgress(copiedCounter, totalTasks, clock.getCurrentTimeMillis()));
+        } else if(copiedCounter == totalTasks) {
+            return reportProgress(copyTaskParameters, ParallelCopyProgressInfo.finished(totalTasks, clock.getCurrentTimeMillis()));
         }
         return Mono.empty();
     }
 
-    private Mono<Response<Void>> sendProgressInfo(CopyTaskParameters copyTaskParameters, Double percentageReady) {
-        return Mono.just(percentageReady)
-                .flatMap(p -> copyTaskParameters.getPageBlobAsyncClient().setMetadataWithResponse(
-                        Map.of("copyProgress", String.format("%.2f", percentageReady)), copyTaskParameters.getDestinationRequestConditions()))
+    private Mono<Response<Void>> reportProgress(CopyTaskParameters copyTaskParameters, ParallelCopyProgressInfo parallelCopyProgressInfo) {
+        return Mono.just(parallelCopyProgressInfo)
+                .flatMap(p -> copyTaskParameters.getPageBlobAsyncClient()
+                        .setMetadataWithResponse(parallelCopyProgressInfo.toMap(), copyTaskParameters.getDestinationRequestConditions()))
                 .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
                 .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum());
     }
