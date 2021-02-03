@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ParallelImageCopyParametersService {
 
-    public static final long CHUNK_SIZE = 4194304L;
-
     @Value("${cb.azure.image.copy.parallel.retry.count}")
     private int retryCount;
 

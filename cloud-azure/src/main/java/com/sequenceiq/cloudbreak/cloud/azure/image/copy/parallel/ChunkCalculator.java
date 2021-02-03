@@ -7,7 +7,6 @@ public class ChunkCalculator {
      */
     private final long chunkSize;
 
-
     /**
      * Size of the file, expressed in bytes
      */
@@ -31,10 +30,6 @@ public class ChunkCalculator {
         this.remainderBytesStart = chunkCountTotal * chunkSize;
     }
 
-    public long getChunkSize() {
-        return chunkSize;
-    }
-
     public long getFileSize() {
         return fileSize;
     }
@@ -49,7 +44,7 @@ public class ChunkCalculator {
      * The end address is the {@link fileSize - 1}.
      *
      * @return start address of remainder bytes to copy.
-     **/
+     */
     public long getRemainderBytesStart() {
         return remainderBytesStart;
     }

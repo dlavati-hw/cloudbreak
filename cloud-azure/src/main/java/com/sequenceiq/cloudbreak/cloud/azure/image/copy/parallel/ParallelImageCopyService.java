@@ -1,7 +1,5 @@
 package com.sequenceiq.cloudbreak.cloud.azure.image.copy.parallel;
 
-import static com.sequenceiq.cloudbreak.cloud.azure.image.copy.parallel.ParallelImageCopyParametersService.CHUNK_SIZE;
-
 import java.util.List;
 
 import javax.inject.Inject;
@@ -31,14 +29,18 @@ public class ParallelImageCopyService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ParallelImageCopyService.class);
 
+    private static final long CHUNK_SIZE = 4194304L;
+
     @Inject
     private ParallelImageCopyParametersService imageCopyParameters;
 
     @Inject
     private ResponseCodeHandlerService responseCodeHandlerService;
 
-    public void copyImage(Image image, AzureClient client, String imageStorageName, String imageResourceGroupName, AzureImageInfo azureImageInfo) {
+    @Inject
+    private CopyTaskService copyTaskService;
 
+    public void copyImage(Image image, AzureClient client, String imageStorageName, String imageResourceGroupName, AzureImageInfo azureImageInfo) {
         PageBlobAsyncClient pageBlobAsyncClient
                 = client.getPageBlobAsyncClient(imageResourceGroupName, imageStorageName, "images", azureImageInfo.getImageName());
         BlobLeaseAsyncClient blobLeaseAsyncClient = new BlobLeaseClientBuilder().blobAsyncClient(pageBlobAsyncClient).buildAsyncClient();
@@ -48,25 +50,25 @@ public class ParallelImageCopyService {
         getPublicBlobPropertiesAsync(Mono.just(sourceBlob))
                 .flatMap(blobPropertiesResponse -> createImage(pageBlobAsyncClient, imageCopyContext, blobPropertiesResponse))
                 .flatMap(pageBlobItemResponse -> startLeaseImage(blobLeaseAsyncClient))
-                .flatMap(leaseId -> copyImageChunks(sourceBlob, CHUNK_SIZE, pageBlobAsyncClient, blobLeaseAsyncClient, imageCopyContext, leaseId))
+                .flatMap(leaseResponse -> copyImageChunks(sourceBlob, pageBlobAsyncClient, blobLeaseAsyncClient, imageCopyContext, leaseResponse.getValue()))
                 .timeout(imageCopyParameters.getImageCopyTimeout())
                 .subscribe();
     }
 
-    private Mono<Void> copyImageChunks(String sourceBlob, long chunkSize, PageBlobAsyncClient pageBlobAsyncClient, BlobLeaseAsyncClient blobLeaseAsyncClient, ImageCopyContext imageCopyContext, String leaseId) {
-        ChunkCalculator chunkCalculator = new ChunkCalculator(imageCopyContext.getFilesize(), chunkSize);
-        PageRangeCalculator pageRangeCalculator = new PageRangeCalculator();
-        List<PageRange> pageRanges = pageRangeCalculator.getAll(chunkCalculator);
+    private Mono<Void> copyImageChunks(String sourceBlob, PageBlobAsyncClient pageBlobAsyncClient, BlobLeaseAsyncClient blobLeaseAsyncClient, ImageCopyContext imageCopyContext, String leaseId) {
+        ChunkCalculator chunkCalculator = new ChunkCalculator(imageCopyContext.getFilesize(), CHUNK_SIZE);
+        List<PageRange> pageRanges = new PageRangeCalculator().getAll(chunkCalculator);
         PageBlobRequestConditions pageBlobRequestConditions = new PageBlobRequestConditions().setLeaseId(leaseId);
-
-        return Mono.just(new CopyTasks(pageBlobAsyncClient, sourceBlob, pageBlobRequestConditions))
-                .flatMap(copyTasks -> copyTasks.createAll(pageRanges, blobLeaseAsyncClient))
-                .doOnError(e -> LOGGER.warn("Final error: "))
-                .doFinally(s -> LOGGER.info("Finally called, signal type: {}", s));
+        return Mono.just(new CopyTaskParameters(pageBlobAsyncClient, sourceBlob, pageBlobRequestConditions, pageRanges, blobLeaseAsyncClient))
+                .flatMap(copyTasks -> copyTaskService.createAll(copyTasks))
+                .doOnError(e -> LOGGER.warn("Copy tasks finished with error: "))
+                .doFinally(s -> LOGGER.info("Copy task finished, signal type: {}", s));
     }
 
-    private Mono<String> startLeaseImage(BlobLeaseAsyncClient blobLeaseAsyncClient) {
-        return blobLeaseAsyncClient.acquireLease(imageCopyParameters.getBlobLeaseDurationSeconds());
+    private Mono<Response<String>> startLeaseImage(BlobLeaseAsyncClient blobLeaseAsyncClient) {
+        return blobLeaseAsyncClient.acquireLeaseWithResponse(imageCopyParameters.getBlobLeaseDurationSeconds(), null)
+                .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
+                .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum());
     }
 
     private Mono<Response<PageBlobItem>> createImage(PageBlobAsyncClient pageBlobAsyncClient, ImageCopyContext imageCopyContext, Response<BlobProperties> blobPropertiesResponse) {
