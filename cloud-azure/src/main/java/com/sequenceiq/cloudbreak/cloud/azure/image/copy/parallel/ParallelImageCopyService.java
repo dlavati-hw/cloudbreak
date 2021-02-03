@@ -21,6 +21,7 @@ import com.azure.storage.blob.specialized.PageBlobAsyncClient;
 import com.sequenceiq.cloudbreak.cloud.azure.client.AzureClient;
 import com.sequenceiq.cloudbreak.cloud.azure.image.AzureImageInfo;
 import com.sequenceiq.cloudbreak.cloud.model.Image;
+import com.sequenceiq.cloudbreak.common.service.Clock;
 
 import reactor.core.publisher.Mono;
 
@@ -39,6 +40,9 @@ public class ParallelImageCopyService {
 
     @Inject
     private CopyTaskService copyTaskService;
+
+    @Inject
+    private Clock clock;
 
     public void copyImage(Image image, AzureClient client, String imageStorageName, String imageResourceGroupName, AzureImageInfo azureImageInfo) {
         PageBlobAsyncClient pageBlobAsyncClient
@@ -74,8 +78,9 @@ public class ParallelImageCopyService {
     private Mono<Response<PageBlobItem>> createImage(PageBlobAsyncClient pageBlobAsyncClient, ImageCopyContext imageCopyContext, Response<BlobProperties> blobPropertiesResponse) {
         long fileSize = blobPropertiesResponse.getValue().getBlobSize();
         imageCopyContext.setFilesize(fileSize);
+        ParallelCopyProgressInfo parallelCopyProgressInfo = ParallelCopyProgressInfo.init(clock.getCurrentTimeMillis());
         return pageBlobAsyncClient
-                .createWithResponse(fileSize, 0L, null, null, null)
+                .createWithResponse(fileSize, 0L, null, parallelCopyProgressInfo.toMap(), null)
                 .doOnSuccess(resp -> responseCodeHandlerService.handleResponse(resp.getStatusCode()))
                 .retryBackoff(imageCopyParameters.getRetryCount(), imageCopyParameters.getBackoffMinimum(), imageCopyParameters.getBackoffMaximum());
     }

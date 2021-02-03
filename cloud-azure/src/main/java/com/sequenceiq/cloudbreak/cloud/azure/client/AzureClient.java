@@ -85,11 +85,11 @@ import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.CloudPageBlob;
-import com.microsoft.azure.storage.blob.CopyState;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import com.sequenceiq.cloudbreak.client.ProviderAuthenticationFailedException;
 import com.sequenceiq.cloudbreak.cloud.azure.AzureDiskType;
 import com.sequenceiq.cloudbreak.cloud.azure.AzurePrivateDnsZoneServiceEnum;
+import com.sequenceiq.cloudbreak.cloud.azure.image.copy.ImageCopyProgressReport;
 import com.sequenceiq.cloudbreak.cloud.azure.status.AzureStatusMapper;
 import com.sequenceiq.cloudbreak.cloud.azure.util.AzureAuthExceptionHandler;
 import com.sequenceiq.cloudbreak.cloud.exception.CloudConnectorException;
@@ -409,7 +409,7 @@ public class AzureClient {
         }
     }
 
-    public CopyState getCopyStatus(String resourceGroup, String storageName, String containerName, String sourceBlobName) {
+    public ImageCopyProgressReport getCopyStatus(String resourceGroup, String storageName, String containerName, String sourceBlobName) {
         LOGGER.debug("get image copy status: RG={}, storageName={}, containerName={}, sourceBlob={}",
                 resourceGroup, storageName, containerName, sourceBlobName);
         CloudBlobContainer container = getBlobContainer(resourceGroup, storageName, containerName);
@@ -419,7 +419,7 @@ public class AzureClient {
             container.downloadAttributes();
             LOGGER.debug("Downloading {} cloudPageBlob attributes.", cloudPageBlob.getName());
             cloudPageBlob.downloadAttributes();
-            return cloudPageBlob.getCopyState();
+            return new ImageCopyProgressReport(cloudPageBlob);
         } catch (URISyntaxException e) {
             throw new CloudConnectorException("can't get copy status, URI is not valid", e);
         } catch (StorageException e) {

@@ -5,7 +5,7 @@ import java.util.Optional;
 
 public class ParallelCopyProgressInfo {
 
-    private static final String FIELD_PROGRESS = "progress";
+    private static final String FIELD_PROGRESS = "progressPercentage";
 
     private static final String FIELD_STATUS = "status";
 
@@ -15,7 +15,7 @@ public class ParallelCopyProgressInfo {
 
     private static final String FIELD_PARALLEL_INFO_PRESENT = "parallelCopyProgressInfoPresent";
 
-    private final String progress;
+    private final int progress;
 
     private final CopyStatus status;
 
@@ -24,17 +24,21 @@ public class ParallelCopyProgressInfo {
     private final String timestamp;
 
     private ParallelCopyProgressInfo(long copiedChunks, long totalChunks, CopyStatus status, String message, long timestamp) {
-        this.progress = String.format("%.2f %%", copiedChunks / (double) totalChunks * 100);
+        this.progress = (int)(copiedChunks * 100 / totalChunks);
         this.status = status;
         this.message = message;
         this.timestamp = String.format("%d", timestamp);
     }
 
-    private ParallelCopyProgressInfo(String copyProgress, CopyStatus status, String message, String timestamp) {
+    private ParallelCopyProgressInfo(int copyProgress, CopyStatus status, String message, String timestamp) {
         this.progress = copyProgress;
         this.status = status;
         this.message = message;
         this.timestamp = timestamp;
+    }
+
+    public static ParallelCopyProgressInfo init(long timestamp) {
+        return new ParallelCopyProgressInfo(0, 1, CopyStatus.IN_PROGRESS, "", timestamp);
     }
 
     public static ParallelCopyProgressInfo inProgress(long copied, long total, long timestamp) {
@@ -56,13 +60,21 @@ public class ParallelCopyProgressInfo {
         }
 
         CopyStatus copyStatus = parseCopyStatus(blobMetadata);
-        return Optional.of(new ParallelCopyProgressInfo(blobMetadata.get(FIELD_PROGRESS), copyStatus, blobMetadata.get(FIELD_MESSAGE), blobMetadata.get(FIELD_TIMESTAMP)));
+        int progress = parseProgress(blobMetadata.get(FIELD_PROGRESS));
+        return Optional.of(new ParallelCopyProgressInfo(progress, copyStatus, blobMetadata.get(FIELD_MESSAGE), blobMetadata.get(FIELD_TIMESTAMP)));
+    }
 
+    private static int parseProgress(String progressString) {
+        try{
+            return Integer.parseInt(progressString);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public Map<String, String> toMap() {
         return Map.of(
-                FIELD_PROGRESS, progress,
+                FIELD_PROGRESS, String.format("%2d", progress),
                 FIELD_STATUS, status.toString(),
                 FIELD_MESSAGE, message,
                 FIELD_TIMESTAMP, timestamp,
@@ -80,6 +92,10 @@ public class ParallelCopyProgressInfo {
 
     public String getTimestamp() {
         return timestamp;
+    }
+
+    public int getProgress() {
+        return progress;
     }
 
     public enum CopyStatus {
