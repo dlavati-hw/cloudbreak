@@ -31,79 +31,83 @@ import com.amazonaws.services.elasticfilesystem.model.PutLifecycleConfigurationR
 import com.amazonaws.services.elasticfilesystem.model.PutLifecycleConfigurationResult;
 import com.amazonaws.services.elasticfilesystem.model.UpdateFileSystemRequest;
 import com.amazonaws.services.elasticfilesystem.model.UpdateFileSystemResult;
+import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
+import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.service.Retry;
 
-public class AmazonEfsRetryClient extends AmazonRetryClient {
+public class AmazonEfsRetryClient extends AmazonClient {
     private final AmazonElasticFileSystemClient client;
 
     private final Retry retry;
 
-    public AmazonEfsRetryClient(AmazonElasticFileSystemClient client, Retry retry) {
+    public AmazonEfsRetryClient(AmazonElasticFileSystemClient client, AwsCredentialView awsCredentialView, SdkClientExceptionMapper sdkClientExceptionMapper,
+            Retry retry) {
+        super(awsCredentialView, sdkClientExceptionMapper);
         this.client = client;
         this.retry = retry;
     }
 
     public CreateFileSystemResult createFileSystem(CreateFileSystemRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.createFileSystem(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.createFileSystem(request)));
     }
 
     public CreateMountTargetResult createMountTarget(CreateMountTargetRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.createMountTarget(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.createMountTarget(request)));
     }
 
     public CreateTagsResult createTags(CreateTagsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.createTags(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.createTags(request)));
     }
 
     public DeleteFileSystemResult deleteFileSystem(DeleteFileSystemRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.deleteFileSystem(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.deleteFileSystem(request)));
     }
 
     public DeleteMountTargetResult deleteMountTarget(DeleteMountTargetRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.deleteMountTarget(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.deleteMountTarget(request)));
     }
 
     public DeleteTagsResult deleteTags(DeleteTagsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.deleteTags(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.deleteTags(request)));
     }
 
     public DescribeFileSystemsResult describeFileSystems(DescribeFileSystemsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeFileSystems(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeFileSystems(request)));
     }
 
     public DescribeFileSystemsResult describeFileSystems() {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeFileSystems()));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeFileSystems()));
     }
 
     public DescribeLifecycleConfigurationResult describeLifecycleConfiguration(DescribeLifecycleConfigurationRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeLifecycleConfiguration(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeLifecycleConfiguration(request)));
     }
 
     public DescribeMountTargetSecurityGroupsResult describeMountTargetSecurityGroups(DescribeMountTargetSecurityGroupsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeMountTargetSecurityGroups(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeMountTargetSecurityGroups(request)));
     }
 
     public DescribeMountTargetsResult describeMountTargets(DescribeMountTargetsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeMountTargets(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeMountTargets(request)));
     }
 
     public DescribeTagsResult describeTags(DescribeTagsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeTags(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeTags(request)));
     }
 
     public ModifyMountTargetSecurityGroupsResult modifyMountTargetSecurityGroups(ModifyMountTargetSecurityGroupsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.modifyMountTargetSecurityGroups(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.modifyMountTargetSecurityGroups(request)));
     }
 
     public PutLifecycleConfigurationResult putLifecycleConfiguration(PutLifecycleConfigurationRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.putLifecycleConfiguration(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.putLifecycleConfiguration(request)));
     }
 
     public UpdateFileSystemResult updateFileSystem(UpdateFileSystemRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.updateFileSystem(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.updateFileSystem(request)));
     }
 
     public ResponseMetadata getCachedResponseMetadata(AmazonWebServiceRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.getCachedResponseMetadata(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.getCachedResponseMetadata(request)));
     }
 }

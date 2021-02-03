@@ -42,6 +42,7 @@ import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
 import com.sequenceiq.cloudbreak.cloud.aws.tracing.AwsTracingRequestHandler;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AuthenticatedContextView;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
@@ -77,6 +78,9 @@ public class AwsClient {
     private Retry retry;
 
     @Inject
+    private SdkClientExceptionMapper sdkClientExceptionMapper;
+
+    @Inject
     private Tracer tracer;
 
     public AuthenticatedContext createAuthenticatedContext(CloudContext cloudContext, CloudCredential cloudCredential) {
@@ -107,7 +111,7 @@ public class AwsClient {
     }
 
     public AmazonEc2RetryClient createEc2RetryClient(AwsCredentialView awsCredential, String regionName) {
-        return new AmazonEc2RetryClient(createAccess(awsCredential, regionName), retry);
+        return new AmazonEc2RetryClient(createAccess(awsCredential, regionName), awsCredential, sdkClientExceptionMapper, retry);
     }
 
     public AmazonEC2Client createAccessWithClientConfiguration(AwsCredentialView awsCredential, String regionName, ClientConfiguration clientConfiguration) {
@@ -171,7 +175,7 @@ public class AwsClient {
     }
 
     public AmazonCloudFormationRetryClient createCloudFormationRetryClient(AwsCredentialView awsCredential, String regionName) {
-        return new AmazonCloudFormationRetryClient(createCloudFormationClient(awsCredential, regionName), retry);
+        return new AmazonCloudFormationRetryClient(createCloudFormationClient(awsCredential, regionName), awsCredential, sdkClientExceptionMapper, retry);
     }
 
     public AmazonElasticLoadBalancingClient createElasticLoadBalancingClient(AwsCredentialView awsCredential, String regionName) {
@@ -194,7 +198,7 @@ public class AwsClient {
     }
 
     public AmazonEfsRetryClient createEfsRetryClient(AwsCredentialView awsCredential, String regionName) {
-        return new AmazonEfsRetryClient(createElasticFileSystemClient(awsCredential, regionName), retry);
+        return new AmazonEfsRetryClient(createElasticFileSystemClient(awsCredential, regionName), awsCredential, sdkClientExceptionMapper, retry);
     }
 
     public AmazonAutoScalingClient createAutoScalingClient(AwsCredentialView awsCredential, String regionName) {
@@ -207,7 +211,7 @@ public class AwsClient {
     }
 
     public AmazonAutoScalingRetryClient createAutoScalingRetryClient(AwsCredentialView awsCredential, String regionName) {
-        return new AmazonAutoScalingRetryClient(createAutoScalingClient(awsCredential, regionName), retry);
+        return new AmazonAutoScalingRetryClient(createAutoScalingClient(awsCredential, regionName), awsCredential, sdkClientExceptionMapper, retry);
     }
 
     public AmazonS3 createS3Client(AwsCredentialView awsCredential) {

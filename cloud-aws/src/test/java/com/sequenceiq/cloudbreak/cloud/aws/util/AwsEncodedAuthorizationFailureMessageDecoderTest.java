@@ -31,10 +31,10 @@ import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 @ExtendWith(MockitoExtension.class)
 class AwsEncodedAuthorizationFailureMessageDecoderTest {
 
-    private static String DECODED_MESSAGE;
-
     private static final String ENCODED_AUTHORIZATION_FAILURE_MESSAGE =
             "API: ec2:CreateSecurityGroup You are not authorized to perform this operation. Encoded authorization failure message: encoded-message";
+
+    private static String decodedMessage;
 
     @Mock
     private AwsClient awsClient;
@@ -49,11 +49,11 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
     private AwsEncodedAuthorizationFailureMessageDecoder underTest;
 
     @Captor
-    ArgumentCaptor<DecodeAuthorizationMessageRequest> requestCaptor;
+    private ArgumentCaptor<DecodeAuthorizationMessageRequest> requestCaptor;
 
     @BeforeAll
     static void init() throws IOException {
-        DECODED_MESSAGE = Files.read(new File("src/test/resources/json/aws-decoded-authorization-error.json"));
+        decodedMessage = Files.read(new File("src/test/resources/json/aws-decoded-authorization-error.json"));
     }
 
     @BeforeEach
@@ -61,7 +61,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
         lenient().when(awsClient.createAwsSecurityTokenService(any()))
                 .thenReturn(awsSecurityTokenService);
         lenient().when(awsSecurityTokenService.decodeAuthorizationMessage(any()))
-                .thenReturn(new DecodeAuthorizationMessageResult().withDecodedMessage(DECODED_MESSAGE));
+                .thenReturn(new DecodeAuthorizationMessageResult().withDecodedMessage(decodedMessage));
     }
 
     @Test

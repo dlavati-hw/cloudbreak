@@ -38,6 +38,8 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.conf.AwsConfig;
 import com.sequenceiq.cloudbreak.cloud.aws.loadbalancer.converter.LoadBalancerTypeConverter;
+import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
+import com.sequenceiq.cloudbreak.cloud.aws.util.AwsEncodedAuthorizationFailureMessageDecoder;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
 import com.sequenceiq.cloudbreak.cloud.exception.CloudConnectorException;
@@ -52,6 +54,7 @@ import io.opentracing.Tracer;
 
 @ExtendWith(SpringExtension.class)
 @TestPropertySource(properties = "cb.max.aws.resource.name.length=5")
+@Import(SdkClientExceptionMapper.class)
 public class AwsValidatorsTest {
 
     public static final String EMPTY = "";
@@ -79,6 +82,9 @@ public class AwsValidatorsTest {
     @MockBean
     private Tracer tracer;
 
+    @MockBean
+    private AwsEncodedAuthorizationFailureMessageDecoder awsEncodedAuthorizationFailureMessageDecoder;
+
     private AuthenticatedContext authenticatedContext;
 
     @BeforeEach
@@ -86,7 +92,8 @@ public class AwsValidatorsTest {
         CloudContext cloudContext = new CloudContext(1L, "stackName", "crn", "AWS", "AWS", Location.location(Region.region("region")), "user", "account");
         CloudCredential cloudCredential = null;
         authenticatedContext = new AuthenticatedContext(cloudContext, cloudCredential);
-
+        when(awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(any(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(1));
     }
 
     @Test

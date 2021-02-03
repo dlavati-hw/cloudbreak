@@ -13,40 +13,43 @@ import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
 import com.amazonaws.services.ec2.model.ModifyInstanceAttributeRequest;
 import com.amazonaws.services.ec2.model.ModifyInstanceAttributeResult;
+import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
+import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.service.Retry;
 
-public class AmazonEc2RetryClient extends AmazonRetryClient {
+public class AmazonEc2RetryClient extends AmazonClient {
 
     private final AmazonEC2Client client;
 
     private final Retry retry;
 
-    public AmazonEc2RetryClient(AmazonEC2Client client, Retry retry) {
+    public AmazonEc2RetryClient(AmazonEC2Client client, AwsCredentialView awsCredentialView, SdkClientExceptionMapper sdkClientExceptionMapper, Retry retry) {
+        super(awsCredentialView, sdkClientExceptionMapper);
         this.client = client;
         this.retry = retry;
     }
 
     public CreateVolumeResult createVolume(CreateVolumeRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.createVolume(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.createVolume(request)));
     }
 
     public DescribeSubnetsResult describeSubnets(DescribeSubnetsRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeSubnets(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeSubnets(request)));
     }
 
     public ModifyInstanceAttributeResult modifyInstanceAttribute(ModifyInstanceAttributeRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.modifyInstanceAttribute(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.modifyInstanceAttribute(request)));
     }
 
     public DeleteVolumeResult deleteVolume(DeleteVolumeRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.deleteVolume(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.deleteVolume(request)));
     }
 
     public DescribeVolumesResult describeVolumes(DescribeVolumesRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.describeVolumes(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.describeVolumes(request)));
     }
 
     public AttachVolumeResult attachVolume(AttachVolumeRequest request) {
-        return retry.testWith2SecDelayMax15Times(() -> mapThrottlingError(() -> client.attachVolume(request)));
+        return retry.testWith2SecDelayMax15Times(() -> mapSdkClientException(() -> client.attachVolume(request)));
     }
 }

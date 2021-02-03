@@ -29,6 +29,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -60,6 +61,9 @@ public class AwsAuthenticatorTest {
 
     @MockBean
     private Tracer tracer;
+
+    @MockBean
+    private SdkClientExceptionMapper sdkClientExceptionMapper;
 
     @BeforeEach
     public void awsClientSetup() {

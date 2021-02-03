@@ -56,6 +56,7 @@ import com.amazonaws.services.ec2.model.StartInstancesResult;
 import com.amazonaws.services.ec2.model.StopInstancesRequest;
 import com.amazonaws.services.ec2.model.StopInstancesResult;
 import com.dyngr.exception.PollerStoppedException;
+import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
 import com.sequenceiq.cloudbreak.cloud.aws.poller.PollerUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.util.AwsInstanceStatusMapper;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -105,6 +106,9 @@ public class AwsInstanceConnectorTest {
 
     @MockBean
     private Tracer tracer;
+
+    @MockBean
+    private SdkClientExceptionMapper sdkClientExceptionMapper;
 
     private AuthenticatedContext authenticatedContext;
 
