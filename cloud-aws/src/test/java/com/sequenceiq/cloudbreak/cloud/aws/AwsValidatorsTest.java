@@ -97,8 +97,8 @@ public class AwsValidatorsTest {
         CloudContext cloudContext = new CloudContext(1L, "stackName", "crn", "AWS", "AWS", Location.location(Region.region("region")), "user", "account");
         CloudCredential cloudCredential = null;
         authenticatedContext = new AuthenticatedContext(cloudContext, cloudCredential);
-        when(awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(any(), anyString()))
-                .thenAnswer(invocation -> invocation.getArgument(1));
+        when(awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(any(), anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(2));
     }
 
     @Test

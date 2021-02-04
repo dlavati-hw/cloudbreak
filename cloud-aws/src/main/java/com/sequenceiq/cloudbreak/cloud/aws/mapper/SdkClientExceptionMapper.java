@@ -16,8 +16,8 @@ public class SdkClientExceptionMapper {
     @Inject
     private AwsEncodedAuthorizationFailureMessageDecoder awsEncodedAuthorizationFailureMessageDecoder;
 
-    public RuntimeException map(AwsCredentialView awsCredentialView, SdkClientException e) {
-        String message = awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(awsCredentialView, e.getMessage());
+    public RuntimeException map(AwsCredentialView awsCredentialView, String region, SdkClientException e) {
+        String message = awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(awsCredentialView, region, e.getMessage());
         if (!message.equals(e.getMessage())) {
             return new CloudConnectorException(message, e);
         }

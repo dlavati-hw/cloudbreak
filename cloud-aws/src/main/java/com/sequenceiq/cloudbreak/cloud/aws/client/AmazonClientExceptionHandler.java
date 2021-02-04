@@ -13,10 +13,13 @@ public class AmazonClientExceptionHandler {
 
     private final AwsCredentialView awsCredentialView;
 
+    private final String region;
+
     private final SdkClientExceptionMapper sdkClientExceptionMapper;
 
-    public AmazonClientExceptionHandler(AwsCredentialView awsCredentialView, SdkClientExceptionMapper sdkClientExceptionMapper) {
+    public AmazonClientExceptionHandler(AwsCredentialView awsCredentialView, String region, SdkClientExceptionMapper sdkClientExceptionMapper) {
         this.awsCredentialView = awsCredentialView;
+        this.region = region;
         this.sdkClientExceptionMapper = sdkClientExceptionMapper;
     }
 
@@ -25,7 +28,7 @@ public class AmazonClientExceptionHandler {
         try {
             return proceedingJoinPoint.proceed();
         } catch (SdkClientException e) {
-            throw sdkClientExceptionMapper.map(awsCredentialView, e);
+            throw sdkClientExceptionMapper.map(awsCredentialView, region, e);
         } catch (Throwable e) {
             throw (RuntimeException) e;
         }

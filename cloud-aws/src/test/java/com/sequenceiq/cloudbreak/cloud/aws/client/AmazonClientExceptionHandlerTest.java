@@ -1,6 +1,7 @@
 package com.sequenceiq.cloudbreak.cloud.aws.client;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,8 @@ class AmazonClientExceptionHandlerTest {
 
     private static final RuntimeException MAPPED_EXCEPTION = new RuntimeException("mappedException");
 
+    private static final String REGION = "us-west-1";
+
     @Mock
     private SdkClientExceptionMapper sdkClientExceptionMapper;
 
@@ -30,11 +33,11 @@ class AmazonClientExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(sdkClientExceptionMapper.map(any(), any())).thenReturn(MAPPED_EXCEPTION);
+        lenient().when(sdkClientExceptionMapper.map(any(), eq(REGION), any())).thenReturn(MAPPED_EXCEPTION);
 
         AmazonEC2 ec2 = mock(AmazonEC2.class);
         AspectJProxyFactory proxyFactory = new AspectJProxyFactory(ec2);
-        proxyFactory.addAspect(new AmazonClientExceptionHandler(mock(AwsCredentialView.class), sdkClientExceptionMapper));
+        proxyFactory.addAspect(new AmazonClientExceptionHandler(mock(AwsCredentialView.class), REGION, sdkClientExceptionMapper));
         this.mockAmazonClient = proxyFactory.getProxy();
     }
 

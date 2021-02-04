@@ -43,15 +43,15 @@ public class AwsCloudFormationErrorMessageProvider {
         DescribeStackResourcesResult describeStackResourcesResult = cfRetryClient.describeStackResources(describeStackResourcesRequest);
         String stackResourceStatusReasons = describeStackResourcesResult.getStackResources().stream()
                 .filter(stackResource -> ResourceStatus.fromValue(stackResource.getResourceStatus()).equals(resourceErrorStatus))
-                .map(stackResource -> getStackResourceMessage(credentialView, stackResource))
+                .map(stackResource -> getStackResourceMessage(credentialView, region, stackResource))
                 .collect(Collectors.joining(", "));
 
         return stackStatusReason + " " + stackResourceStatusReasons;
     }
 
-    private String getStackResourceMessage(AwsCredentialView credentialView, StackResource stackResource) {
-        String statusReason =
-                awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(credentialView, stackResource.getResourceStatusReason());
+    private String getStackResourceMessage(AwsCredentialView credentialView, String region, StackResource stackResource) {
+        String statusReason = awsEncodedAuthorizationFailureMessageDecoder
+                .decodeAuthorizationFailureMessageIfNeeded(credentialView, region, stackResource.getResourceStatusReason());
         return stackResource.getLogicalResourceId() + ": " + statusReason;
     }
 }

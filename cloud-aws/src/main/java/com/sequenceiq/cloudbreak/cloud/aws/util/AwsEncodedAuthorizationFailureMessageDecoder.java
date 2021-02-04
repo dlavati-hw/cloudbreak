@@ -27,13 +27,13 @@ public class AwsEncodedAuthorizationFailureMessageDecoder {
     @Inject
     private AwsClient awsClient;
 
-    public String decodeAuthorizationFailureMessageIfNeeded(AwsCredentialView credentialView, String message) {
+    public String decodeAuthorizationFailureMessageIfNeeded(AwsCredentialView credentialView, String region, String message) {
         Matcher matcher = ENCODED_AUTHORIZATION_FAILURE_MESSAGE_PATTERN.matcher(message);
 
         String result = message;
         if (matcher.find()) {
             try {
-                result = getResultMessage(credentialView, matcher.group(1));
+                result = getResultMessage(credentialView, region, matcher.group(1));
             } catch (AWSSecurityTokenServiceException e) {
                 if ("AccessDenied".equals(e.getErrorCode())) {
                     result = message.replaceAll(matcher.group(0), "(Please add sts:DecodeAuthorizationMessage right to your IAM policy to get more details.)");
@@ -48,8 +48,8 @@ public class AwsEncodedAuthorizationFailureMessageDecoder {
         return result;
     }
 
-    private String getResultMessage(AwsCredentialView credentialView, String encodedMessage) {
-        AWSSecurityTokenServiceClient awsSts = awsClient.createAwsSecurityTokenService(credentialView);
+    private String getResultMessage(AwsCredentialView credentialView, String region, String encodedMessage) {
+        AWSSecurityTokenServiceClient awsSts = awsClient.createAwsSecurityTokenService(credentialView, region);
         DecodeAuthorizationMessageRequest decodeAuthorizationMessageRequest = new DecodeAuthorizationMessageRequest().withEncodedMessage(encodedMessage);
         DecodeAuthorizationMessageResult decodeAuthorizationMessageResult = awsSts.decodeAuthorizationMessage(decodeAuthorizationMessageRequest);
         String decodedMessage = decodeAuthorizationMessageResult.getDecodedMessage();
