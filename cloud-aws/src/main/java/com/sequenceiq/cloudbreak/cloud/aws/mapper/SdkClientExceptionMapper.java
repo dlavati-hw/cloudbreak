@@ -22,7 +22,7 @@ public class SdkClientExceptionMapper {
             return new CloudConnectorException(message, e);
         }
         if (message.contains("Rate exceeded") || message.contains("Request limit exceeded")) {
-            return new ActionFailedException(e.getMessage());
+            return new ActionFailedException(message);
         }
         return e;
     }

@@ -28,7 +28,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
@@ -37,7 +36,6 @@ import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesResult;
 import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.autoscaling.model.LifecycleState;
 import com.amazonaws.services.autoscaling.waiters.AmazonAutoScalingWaiters;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStackResourceResult;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
@@ -45,11 +43,8 @@ import com.amazonaws.services.cloudformation.model.Output;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackResourceDetail;
 import com.amazonaws.services.cloudformation.waiters.AmazonCloudFormationWaiters;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateVolumeResult;
 import com.amazonaws.services.ec2.model.DescribeImagesResult;
-import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.DescribePrefixListsResult;
@@ -57,7 +52,6 @@ import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
-import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.VolumeState;
 import com.amazonaws.services.ec2.waiters.AmazonEC2Waiters;
@@ -72,8 +66,9 @@ import com.amazonaws.services.elasticfilesystem.model.LifeCycleState;
 import com.amazonaws.services.elasticfilesystem.model.MountTargetDescription;
 import com.amazonaws.waiters.Waiter;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingRetryClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudWatchClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.connector.resource.AwsResourceConnector;
@@ -135,13 +130,7 @@ public class AwsLaunchTest {
     private ComponentTestUtil componentTestUtil;
 
     @MockBean
-    private AmazonCloudFormationRetryClient amazonCloudFormationRetryClient;
-
-    @MockBean
     private AmazonCloudFormationClient amazonCloudFormationClient;
-
-    @MockBean
-    private AmazonEC2Client amazonEC2Client;
 
     @Mock
     private AmazonEc2RetryClient amazonEc2RetryClient;
@@ -151,9 +140,6 @@ public class AwsLaunchTest {
 
     @MockBean
     private AmazonEfsRetryClient amazonEfsRetryClient;
-
-    @MockBean
-    private AmazonAutoScalingRetryClient amazonAutoScalingRetryClient;
 
     @MockBean
     private AmazonAutoScalingClient amazonAutoScalingClient;
@@ -197,7 +183,6 @@ public class AwsLaunchTest {
         setupDescribeImagesResponse();
         setupDescribeStackResourceResponse();
         setupAutoscalingResponses();
-        setupDescribeInstanceStatusResponse();
         setupDescribeInstancesResponse();
         setupCreateVolumeResponse();
         setupDescribeVolumeResponse();
@@ -207,7 +192,7 @@ public class AwsLaunchTest {
         InMemoryStateStore.putStack(1L, PollGroup.POLLABLE);
 
         AuthenticatedContext authenticatedContext = componentTestUtil.getAuthenticatedContext();
-        authenticatedContext.putParameter(AmazonEC2Client.class, amazonEC2Client);
+        authenticatedContext.putParameter(AmazonEc2RetryClient.class, amazonEc2RetryClient);
         awsResourceConnector.launch(authenticatedContext, componentTestUtil.getStackForLaunch(InstanceStatus.CREATE_REQUESTED, InstanceStatus.CREATE_REQUESTED),
                 persistenceNotifier, AdjustmentType.EXACT, Long.MAX_VALUE);
 
@@ -218,12 +203,12 @@ public class AwsLaunchTest {
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.AWS_SUBNET.equals(cloudResource.getType())), any());
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.CLOUDFORMATION_STACK.equals(cloudResource.getType())), any());
 
-        InOrder inOrder = inOrder(amazonEC2Client, amazonCloudFormationRetryClient, amazonEc2RetryClient);
-        inOrder.verify(amazonEC2Client).describeImages(any());
-        inOrder.verify(amazonCloudFormationRetryClient).createStack(any());
+        InOrder inOrder = inOrder(amazonEc2RetryClient, amazonCloudFormationClient, amazonEc2RetryClient);
+        inOrder.verify(amazonEc2RetryClient).describeImages(any());
+        inOrder.verify(amazonCloudFormationClient).createStack(any());
         inOrder.verify(amazonEc2RetryClient, times(2)).createVolume(any());
         inOrder.verify(amazonEc2RetryClient, times(2)).attachVolume(any());
-        inOrder.verify(amazonEC2Client, never()).describePrefixLists();
+        inOrder.verify(amazonEc2RetryClient, never()).describePrefixLists();
     }
 
     @Test
@@ -235,7 +220,6 @@ public class AwsLaunchTest {
         setupDescribeImagesResponse();
         setupDescribeStackResourceResponse();
         setupAutoscalingResponses();
-        setupDescribeInstanceStatusResponse();
         setupDescribeInstancesResponse();
         setupCreateVolumeResponse();
         setupDescribeVolumeResponse();
@@ -251,7 +235,7 @@ public class AwsLaunchTest {
         InMemoryStateStore.putStack(1L, PollGroup.POLLABLE);
 
         AuthenticatedContext authenticatedContext = componentTestUtil.getAuthenticatedContext();
-        authenticatedContext.putParameter(AmazonEC2Client.class, amazonEC2Client);
+        authenticatedContext.putParameter(AmazonEc2RetryClient.class, amazonEc2RetryClient);
         authenticatedContext.putParameter(AmazonElasticFileSystemClient.class, amazonElasticFileSystemClient);
         authenticatedContext.putParameter(AmazonEfsRetryClient.class, amazonEfsRetryClient);
         awsResourceConnector.launch(authenticatedContext, componentTestUtil.getStackForLaunch(InstanceStatus.CREATE_REQUESTED, InstanceStatus.CREATE_REQUESTED),
@@ -264,30 +248,26 @@ public class AwsLaunchTest {
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.AWS_SUBNET.equals(cloudResource.getType())), any());
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.CLOUDFORMATION_STACK.equals(cloudResource.getType())), any());
 
-        InOrder inOrder = inOrder(amazonElasticFileSystemClient, amazonEfsRetryClient, amazonEC2Client, amazonCloudFormationRetryClient, amazonEc2RetryClient);
-        inOrder.verify(amazonEC2Client).describeImages(any());
-        inOrder.verify(amazonCloudFormationRetryClient).createStack(any());
+        InOrder inOrder = inOrder(amazonElasticFileSystemClient, amazonEfsRetryClient, amazonCloudFormationClient, amazonEc2RetryClient);
+        inOrder.verify(amazonEc2RetryClient).describeImages(any());
+        inOrder.verify(amazonCloudFormationClient).createStack(any());
         inOrder.verify(amazonEc2RetryClient, times(2)).createVolume(any());
         inOrder.verify(amazonEc2RetryClient, times(2)).attachVolume(any());
-        inOrder.verify(amazonEC2Client, never()).describePrefixLists();
+        inOrder.verify(amazonEc2RetryClient, never()).describePrefixLists();
     }
 
     private void setup() {
-        when(awsClient.createAccess(any(), anyString())).thenReturn(amazonEC2Client);
-        when(awsClient.createAccess(any())).thenReturn(amazonEC2Client);
         when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEc2RetryClient);
-        when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonElasticFileSystemClient);
-        when(awsClient.createEfsRetryClient(any(), anyString())).thenReturn(amazonEfsRetryClient);
-        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(amazonCloudFormationRetryClient);
-        when(awsClient.createCloudFormationClient(any(), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonEfsRetryClient);
+        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(amazonCloudFormationClient);
         when(amazonCloudFormationClient.waiters()).thenReturn(cfWaiters);
         when(cfWaiters.stackCreateComplete()).thenReturn(cfStackWaiter);
         when(cfWaiters.stackDeleteComplete()).thenReturn(cfStackWaiter);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingRetryClient);
+        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
         when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
         when(amazonAutoScalingClient.waiters()).thenReturn(asWaiters);
         when(asWaiters.groupInService()).thenReturn(describeAutoScalingGroupsRequestWaiter);
-        when(amazonEC2Client.waiters()).thenReturn(ecWaiters);
+        when(amazonEc2RetryClient.waiters()).thenReturn(ecWaiters);
         when(ecWaiters.instanceRunning()).thenReturn(instanceWaiter);
         when(ecWaiters.instanceTerminated()).thenReturn(instanceWaiter);
         when(customAmazonWaiterProvider.getAutoscalingInstancesInServiceWaiter(any(), any())).thenReturn(describeAutoScalingGroupsRequestWaiter);
@@ -352,22 +332,15 @@ public class AwsLaunchTest {
         return currentVolumeState;
     }
 
-    private void setupDescribeInstanceStatusResponse() {
-        when(amazonEC2Client.describeInstanceStatus(any())).thenReturn(
-                new DescribeInstanceStatusResult().withInstanceStatuses(
-                        new com.amazonaws.services.ec2.model.InstanceStatus().withInstanceState(new InstanceState().withCode(INSTANCE_STATE_RUNNING)))
-        );
-    }
-
     private void setupDescribeInstancesResponse() {
-        when(amazonEC2Client.describeInstances(any())).thenReturn(
+        when(amazonEc2RetryClient.describeInstances(any())).thenReturn(
                 new DescribeInstancesResult().withReservations(
                         new Reservation().withInstances(new com.amazonaws.services.ec2.model.Instance().withInstanceId("i-instance")))
         );
     }
 
     private void setupDescribeStacksResponses() {
-        when(amazonCloudFormationRetryClient.describeStacks(any()))
+        when(amazonCloudFormationClient.describeStacks(any()))
                 .thenThrow(new AmazonServiceException("stack does not exist"))
                 .thenReturn(getDescribeStacksResult())
                 .thenReturn(getDescribeStacksResult())
@@ -375,25 +348,25 @@ public class AwsLaunchTest {
     }
 
     private void setupDescribeImagesResponse() {
-        when(amazonEC2Client.describeImages(any())).thenReturn(
+        when(amazonEc2RetryClient.describeImages(any())).thenReturn(
                 new DescribeImagesResult()
                         .withImages(new com.amazonaws.services.ec2.model.Image().withRootDeviceName(""))
         );
     }
 
     private void setupDescribePrefixListsResponse() {
-        when(amazonEC2Client.describePrefixLists()).thenReturn(new DescribePrefixListsResult());
+        when(amazonEc2RetryClient.describePrefixLists()).thenReturn(new DescribePrefixListsResult());
     }
 
     private void setupDescribeStackResourceResponse() {
         StackResourceDetail stackResourceDetail = new StackResourceDetail().withPhysicalResourceId(AUTOSCALING_GROUP_NAME);
         DescribeStackResourceResult describeStackResourceResult = new DescribeStackResourceResult().withStackResourceDetail(stackResourceDetail);
-        when(amazonCloudFormationRetryClient.describeStackResource(any())).thenReturn(describeStackResourceResult);
+        when(amazonCloudFormationClient.describeStackResource(any())).thenReturn(describeStackResourceResult);
     }
 
     private void setupAutoscalingResponses() {
         DescribeScalingActivitiesResult describeScalingActivitiesResult = new DescribeScalingActivitiesResult();
-        when(amazonAutoScalingRetryClient.describeScalingActivities(any())).thenReturn(describeScalingActivitiesResult);
+        when(amazonAutoScalingClient.describeScalingActivities(any())).thenReturn(describeScalingActivitiesResult);
 
         DescribeAutoScalingGroupsResult describeAutoScalingGroupsResult = new DescribeAutoScalingGroupsResult()
                 .withAutoScalingGroups(
@@ -401,7 +374,7 @@ public class AwsLaunchTest {
                                 .withInstances(new Instance().withLifecycleState(LifecycleState.InService).withInstanceId(INSTANCE_ID))
                                 .withAutoScalingGroupName(AUTOSCALING_GROUP_NAME)
                 );
-        when(amazonAutoScalingRetryClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
+        when(amazonAutoScalingClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
     }
 
     private DescribeStacksResult getDescribeStacksResult() {

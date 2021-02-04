@@ -13,7 +13,7 @@ import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.ResourceStatus;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 
@@ -34,7 +34,7 @@ public class AwsCloudFormationErrorMessageProvider {
     }
 
     public String getErrorReason(AwsCredentialView credentialView, String region, String stackName, ResourceStatus resourceErrorStatus) {
-        AmazonCloudFormationRetryClient cfRetryClient = awsClient.createCloudFormationRetryClient(credentialView, region);
+        AmazonCloudFormationClient cfRetryClient = awsClient.createCloudFormationRetryClient(credentialView, region);
         DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackName);
         DescribeStacksResult describeStacksResult = cfRetryClient.describeStacks(describeStacksRequest);
         String stackStatusReason = describeStacksResult.getStacks().get(0).getStackStatusReason();

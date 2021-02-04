@@ -210,7 +210,7 @@ public class AwsEfsResourceBuilder extends AbstractAwsComputeBuilder {
     private AmazonEfsRetryClient getAmazonEfsClient(AuthenticatedContext auth) {
         AwsCredentialView credentialView = new AwsCredentialView(auth.getCloudCredential());
         String regionName = auth.getCloudContext().getLocation().getRegion().value();
-        return awsClient.createEfsRetryClient(credentialView, regionName);
+        return awsClient.createElasticFileSystemClient(credentialView, regionName);
     }
 
     private CreateFileSystemRequest creatEfsRequest(CloudResource resource, CloudStack cloudStack, Map<String, CloudEfsAttributes> efsSetMap) {

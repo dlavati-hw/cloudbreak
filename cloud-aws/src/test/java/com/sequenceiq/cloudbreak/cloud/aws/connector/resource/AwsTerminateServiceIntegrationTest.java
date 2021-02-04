@@ -22,16 +22,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.waiters.AmazonCloudFormationWaiters;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.waiters.Waiter;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingRetryClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
 import com.sequenceiq.cloudbreak.cloud.aws.context.AwsContextBuilder;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -69,10 +68,10 @@ public class AwsTerminateServiceIntegrationTest {
     private CloudStack cloudStack;
 
     @Mock
-    private AmazonCloudFormationRetryClient cloudFormationRetryClient;
+    private AmazonCloudFormationClient cloudFormationRetryClient;
 
     @Mock
-    private AmazonEC2Client ec2Client;
+    private AmazonEc2RetryClient ec2Client;
 
     @Mock
     private Retry retryService;
@@ -102,9 +101,6 @@ public class AwsTerminateServiceIntegrationTest {
     private AwsResourceConnector awsResourceConnector;
 
     @Mock
-    private AmazonAutoScalingRetryClient amazonAutoScalingRetryClient;
-
-    @Mock
     private AmazonAutoScalingClient amazonAutoScalingClient;
 
     @Test
@@ -131,7 +127,7 @@ public class AwsTerminateServiceIntegrationTest {
         verify(awsResourceConnector, times(1)).check(any(), any());
         verify(awsComputeResourceService, times(1)).deleteComputeResources(any(), any(), any());
         verify(cloudFormationRetryClient, never()).deleteStack(any());
-        verify(amazonAutoScalingRetryClient, never()).describeAutoScalingGroups(any());
+        verify(amazonAutoScalingClient, never()).describeAutoScalingGroups(any());
 
     }
 
@@ -141,7 +137,7 @@ public class AwsTerminateServiceIntegrationTest {
         verify(awsResourceConnector, times(1)).check(any(), any());
         verify(awsComputeResourceService, times(1)).deleteComputeResources(any(), any(), any());
         verify(cloudFormationRetryClient, never()).deleteStack(any());
-        verify(amazonAutoScalingRetryClient, never()).describeAutoScalingGroups(any());
+        verify(amazonAutoScalingClient, never()).describeAutoScalingGroups(any());
         Assertions.assertEquals(0, result.size(), "Resources result should be empty");
     }
 
@@ -152,7 +148,7 @@ public class AwsTerminateServiceIntegrationTest {
         verify(awsResourceConnector, times(1)).check(any(), any());
         verify(awsComputeResourceService, times(1)).deleteComputeResources(any(), any(), any());
         verify(cloudFormationRetryClient, never()).deleteStack(any());
-        verify(amazonAutoScalingRetryClient, never()).describeAutoScalingGroups(any());
+        verify(amazonAutoScalingClient, never()).describeAutoScalingGroups(any());
         Assertions.assertEquals(0, result.size(), "Resources result should be empty");
     }
 
@@ -175,7 +171,7 @@ public class AwsTerminateServiceIntegrationTest {
         verify(awsResourceConnector, times(1)).check(any(), any());
         verify(awsComputeResourceService, times(1)).deleteComputeResources(any(), any(), any());
         verify(cloudFormationRetryClient, never()).deleteStack(any());
-        verify(amazonAutoScalingRetryClient, never()).describeAutoScalingGroups(any());
+        verify(amazonAutoScalingClient, never()).describeAutoScalingGroups(any());
         Assertions.assertEquals(0, result.size(), "Resources result should be empty");
 
     }
@@ -193,8 +189,8 @@ public class AwsTerminateServiceIntegrationTest {
         when(cfStackUtil.getAutoscalingGroupName(any(), anyString(), anyString())).thenReturn("alma");
         when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
         when(awsClient.createAutoScalingClient(any(), any())).thenReturn(amazonAutoScalingClient);
-        when(awsClient.createAutoScalingRetryClient(any(), any())).thenReturn(amazonAutoScalingRetryClient);
-        when(amazonAutoScalingRetryClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
+        when(awsClient.createAutoScalingRetryClient(any(), any())).thenReturn(amazonAutoScalingClient);
+        when(amazonAutoScalingClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
         when(retryService.testWith2SecDelayMax5Times(any(Supplier.class))).thenReturn(Boolean.TRUE);
 
         List<CloudResourceStatus> result = underTest.terminate(authenticatedContext(), cloudStack, List.of(
@@ -204,7 +200,7 @@ public class AwsTerminateServiceIntegrationTest {
         verify(awsResourceConnector, times(1)).check(any(), any());
         verify(awsComputeResourceService, times(1)).deleteComputeResources(any(), any(), any());
         verify(retryService, times(1)).testWith2SecDelayMax5Times(any(Supplier.class));
-        verify(amazonAutoScalingRetryClient, times(1)).describeAutoScalingGroups(any());
+        verify(amazonAutoScalingClient, times(1)).describeAutoScalingGroups(any());
         Assertions.assertEquals(0, result.size(), "Resources result should have one size list");
     }
 
@@ -214,7 +210,7 @@ public class AwsTerminateServiceIntegrationTest {
                 location, USER_ID, WORKSPACE_ID);
         CloudCredential credential = new CloudCredential("crn", null);
         AuthenticatedContext ac = new AuthenticatedContext(cloudContext, credential);
-        ac.putParameter(AmazonEC2Client.class, ec2Client);
+        ac.putParameter(AmazonEc2RetryClient.class, ec2Client);
         return ac;
     }
 }

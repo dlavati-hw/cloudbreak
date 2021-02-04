@@ -9,11 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.AWSSecurityTokenServiceException;
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageRequest;
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageResult;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.common.json.Json;
 
@@ -49,7 +49,7 @@ public class AwsEncodedAuthorizationFailureMessageDecoder {
     }
 
     private String getResultMessage(AwsCredentialView credentialView, String encodedMessage) {
-        AWSSecurityTokenService awsSts = awsClient.createAwsSecurityTokenService(credentialView);
+        AWSSecurityTokenServiceClient awsSts = awsClient.createAwsSecurityTokenService(credentialView);
         DecodeAuthorizationMessageRequest decodeAuthorizationMessageRequest = new DecodeAuthorizationMessageRequest().withEncodedMessage(encodedMessage);
         DecodeAuthorizationMessageResult decodeAuthorizationMessageResult = awsSts.decodeAuthorizationMessage(decodeAuthorizationMessageRequest);
         String decodedMessage = decodeAuthorizationMessageResult.getDecodedMessage();

@@ -17,11 +17,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.LaunchConfiguration;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.GetTemplateResult;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -77,7 +77,7 @@ public class AwsLaunchConfigurationImageUpdateServiceTest {
         ac = new AuthenticatedContext(cloudContext, cc);
         when(stack.getImage()).thenReturn(image);
         when(image.getImageName()).thenReturn(IMAGE_NAME);
-        when(awsClient.createCloudFormationClient(any(AwsCredentialView.class), anyString())).thenReturn(cloudFormationClient);
+        when(awsClient.createCloudFormationRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(cloudFormationClient);
         when(awsClient.createAutoScalingClient(any(AwsCredentialView.class), anyString())).thenReturn(autoScalingClient);
     }
 

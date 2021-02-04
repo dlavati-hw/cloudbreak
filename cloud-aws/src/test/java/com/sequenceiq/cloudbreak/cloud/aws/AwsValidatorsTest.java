@@ -3,6 +3,7 @@ package com.sequenceiq.cloudbreak.cloud.aws;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,8 +35,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.conf.AwsConfig;
 import com.sequenceiq.cloudbreak.cloud.aws.loadbalancer.converter.LoadBalancerTypeConverter;
 import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
@@ -48,6 +49,7 @@ import com.sequenceiq.cloudbreak.cloud.model.CloudStack;
 import com.sequenceiq.cloudbreak.cloud.model.Location;
 import com.sequenceiq.cloudbreak.cloud.model.Region;
 import com.sequenceiq.cloudbreak.service.CloudbreakResourceReaderService;
+import com.sequenceiq.cloudbreak.service.Retry;
 import com.sequenceiq.cloudbreak.service.RetryService;
 
 import io.opentracing.Tracer;
@@ -71,10 +73,13 @@ public class AwsValidatorsTest {
     private AwsAuthenticator awsAuthenticator;
 
     @Mock
-    private AmazonCloudFormationRetryClient amazonCloudFormationRetryClient;
-
-    @Mock
     private AmazonCloudFormationClient amazonCloudFormationClient;
+
+    @Inject
+    private SdkClientExceptionMapper sdkClientExceptionMapper;
+
+    @Inject
+    private Retry retry;
 
     @SpyBean
     private AwsClient awsClient;
@@ -98,26 +103,29 @@ public class AwsValidatorsTest {
 
     @Test
     public void testStackValidatorStackAlreadyExist() {
-        doReturn(amazonCloudFormationRetryClient).when(awsClient).createCloudFormationRetryClient(any(), anyString());
+        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationRetryClient(any(), anyString());
         Assertions.assertThrows(CloudConnectorException.class, () -> awsStackValidatorUnderTest.validate(authenticatedContext, null));
     }
 
     @Test
     public void testStackValidatorStackUnexistent() {
-        doReturn(amazonCloudFormationRetryClient).when(awsClient).createCloudFormationRetryClient(any(), anyString());
-        when(amazonCloudFormationRetryClient.describeStacks(any())).thenThrow(new AmazonServiceException("test exist"));
+        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationRetryClient(any(), anyString());
+        when(amazonCloudFormationClient.describeStacks(any())).thenThrow(new AmazonServiceException("test exist"));
         Assertions.assertDoesNotThrow(() -> awsStackValidatorUnderTest.validate(authenticatedContext, null));
     }
 
     @Test
     public void testStackValidatorStackUseRetryClient() {
-        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationClient(any(), anyString());
-        when(amazonCloudFormationClient.describeStacks(any()))
+        AmazonCloudFormation client = mock(AmazonCloudFormation.class);
+        doReturn(client).when(awsClient).createCloudFormationClient(any(), anyString());
+        when(client.describeStacks(any()))
                 .thenThrow(new SdkClientException("repeat1 Rate exceeded"))
                 .thenThrow(new SdkClientException("repeat2Request limit exceeded"))
                 .thenReturn(null);
+//        doReturn(new AmazonCloudFormationClient(client, mock(AwsCredentialView.class), retry))
+//                .when(awsClient).createCloudFormationRetryClient(any(), anyString());
         Assertions.assertThrows(CloudConnectorException.class, () -> awsStackValidatorUnderTest.validate(authenticatedContext, null));
-        verify(amazonCloudFormationClient, times(3)).describeStacks(any());
+        verify(client, times(3)).describeStacks(any());
     }
 
     @TestFactory
@@ -206,7 +214,8 @@ public class AwsValidatorsTest {
             RetryService.class,
             AwsStackValidator.class,
             CloudFormationStackUtil.class,
-            LoadBalancerTypeConverter.class
+            LoadBalancerTypeConverter.class,
+            SdkClientExceptionMapper.class,
     })
     static class Config {
 

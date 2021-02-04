@@ -8,10 +8,10 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.LaunchConfiguration;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.model.CloudResource;
@@ -32,7 +32,7 @@ public class AwsLaunchConfigurationImageUpdateService {
     public void updateImage(AuthenticatedContext authenticatedContext, CloudStack stack, CloudResource cfResource) {
         AwsCredentialView credentialView = new AwsCredentialView(authenticatedContext.getCloudCredential());
         String regionName = authenticatedContext.getCloudContext().getLocation().getRegion().getRegionName();
-        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationClient(credentialView, regionName);
+        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
         AmazonAutoScalingClient autoScalingClient = awsClient.createAutoScalingClient(credentialView, regionName);
 
         Map<AutoScalingGroup, String> scalingGroups = autoScalingGroupHandler.getAutoScalingGroups(cloudFormationClient, autoScalingClient, cfResource);

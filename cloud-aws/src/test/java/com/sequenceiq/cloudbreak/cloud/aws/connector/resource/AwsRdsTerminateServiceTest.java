@@ -1,7 +1,20 @@
 package com.sequenceiq.cloudbreak.cloud.aws.connector.resource;
 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+
+import java.util.Collections;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.waiters.AmazonCloudFormationWaiters;
@@ -10,7 +23,7 @@ import com.amazonaws.waiters.WaiterParameters;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsStackRequestHelper;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -19,19 +32,6 @@ import com.sequenceiq.cloudbreak.cloud.model.CloudCredential;
 import com.sequenceiq.cloudbreak.cloud.model.Location;
 import com.sequenceiq.cloudbreak.cloud.model.Region;
 import com.sequenceiq.cloudbreak.cloud.notification.PersistenceNotifier;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.util.Collections;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 public class AwsRdsTerminateServiceTest {
 
@@ -69,9 +69,6 @@ public class AwsRdsTerminateServiceTest {
     private Region region;
 
     @Mock
-    private AmazonCloudFormationRetryClient amazonCloudFormationRetryClient;
-
-    @Mock
     private DeleteStackRequest deleteStackRequest;
 
     @Mock
@@ -97,7 +94,7 @@ public class AwsRdsTerminateServiceTest {
         when(location.getRegion()).thenReturn(region);
         when(region.value()).thenReturn(REGION);
         when(awsStackRequestHelper.createDeleteStackRequest(STACK_NAME)).thenReturn(deleteStackRequest);
-        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
         when(amazonCloudFormationClient.waiters()).thenReturn(amazonCloudFormationWaiters);
         when(amazonCloudFormationWaiters.stackDeleteComplete()).thenReturn(describeStacksRequestWaiter);
         when(cloudContext.getId()).thenReturn(ID);
@@ -106,11 +103,11 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldCallDeleteStackAndWaitForDeleteComplete() throws Exception {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationRetryClient);
+        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
 
         victim.terminate(authenticatedContext, null, false, persistenceNotifier, Collections.emptyList(), true);
 
-        verify(amazonCloudFormationRetryClient).deleteStack(deleteStackRequest);
+        verify(amazonCloudFormationClient).deleteStack(deleteStackRequest);
         verify(describeStacksRequestWaiter).run(Mockito.any(WaiterParameters.class));
     }
 
@@ -121,7 +118,7 @@ public class AwsRdsTerminateServiceTest {
 
         victim.terminate(authenticatedContext, null, false, persistenceNotifier, Collections.emptyList(), true);
 
-        verifyNoInteractions(amazonCloudFormationRetryClient);
+        verifyNoInteractions(amazonCloudFormationClient);
     }
 
     @Test
@@ -138,7 +135,7 @@ public class AwsRdsTerminateServiceTest {
 
         victim.terminate(authenticatedContext, null, true, persistenceNotifier, Collections.emptyList(), true);
 
-        verifyNoInteractions(amazonCloudFormationRetryClient);
+        verifyNoInteractions(amazonCloudFormationClient);
     }
 
     @Test
@@ -155,6 +152,6 @@ public class AwsRdsTerminateServiceTest {
 
         victim.terminate(authenticatedContext, null, true, persistenceNotifier, Collections.emptyList(), true);
 
-        verifyNoInteractions(amazonCloudFormationRetryClient);
+        verifyNoInteractions(amazonCloudFormationClient);
     }
 }

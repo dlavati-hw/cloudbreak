@@ -19,7 +19,7 @@ import com.amazonaws.services.cloudformation.model.ResourceStatus;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,7 +33,7 @@ class AwsCloudFormationErrorMessageProviderTest {
     private AwsClient awsClient;
 
     @Mock
-    private AmazonCloudFormationRetryClient cfRetryClient;
+    private AmazonCloudFormationClient cfRetryClient;
 
     @Mock
     private AwsEncodedAuthorizationFailureMessageDecoder awsEncodedAuthorizationFailureMessageDecoder;

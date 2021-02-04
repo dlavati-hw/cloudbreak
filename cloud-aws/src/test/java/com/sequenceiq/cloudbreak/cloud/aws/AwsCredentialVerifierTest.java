@@ -25,16 +25,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
 import com.amazonaws.services.identitymanagement.model.OrganizationsDecisionDetail;
 import com.amazonaws.services.identitymanagement.model.SimulatePrincipalPolicyRequest;
 import com.amazonaws.services.identitymanagement.model.SimulatePrincipalPolicyResult;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonIdentityManagementClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.model.CloudCredential;
 
@@ -60,10 +60,10 @@ public class AwsCredentialVerifierTest {
         awsParameters.put("secretKey", "b");
         CloudCredential cloudCredential = new CloudCredential("id", "name", awsParameters, false);
 
-        AmazonIdentityManagement amazonIdentityManagement = mock(AmazonIdentityManagement.class);
+        AmazonIdentityManagementClient amazonIdentityManagement = mock(AmazonIdentityManagementClient.class);
         when(awsClient.createAmazonIdentityManagement(any(AwsCredentialView.class))).thenReturn(amazonIdentityManagement);
 
-        AWSSecurityTokenService awsSecurityTokenService = mock(AWSSecurityTokenService.class);
+        AWSSecurityTokenServiceClient awsSecurityTokenService = mock(AWSSecurityTokenServiceClient.class);
         GetCallerIdentityResult getCallerIdentityResult = new GetCallerIdentityResult();
         getCallerIdentityResult.setArn("arn");
         when(awsSecurityTokenService.getCallerIdentity(any(GetCallerIdentityRequest.class))).thenReturn(getCallerIdentityResult);
@@ -119,10 +119,10 @@ public class AwsCredentialVerifierTest {
         awsParameters.put("secretKey", "b");
         CloudCredential cloudCredential = new CloudCredential("id", "name", awsParameters, false);
 
-        AmazonIdentityManagement amazonIdentityManagement = mock(AmazonIdentityManagement.class);
+        AmazonIdentityManagementClient amazonIdentityManagement = mock(AmazonIdentityManagementClient.class);
         when(awsClient.createAmazonIdentityManagement(any(AwsCredentialView.class))).thenReturn(amazonIdentityManagement);
 
-        AWSSecurityTokenService awsSecurityTokenService = mock(AWSSecurityTokenService.class);
+        AWSSecurityTokenServiceClient awsSecurityTokenService = mock(AWSSecurityTokenServiceClient.class);
         GetCallerIdentityResult getCallerIdentityResult = new GetCallerIdentityResult();
         getCallerIdentityResult.setArn("arn");
         when(awsSecurityTokenService.getCallerIdentity(any(GetCallerIdentityRequest.class))).thenReturn(getCallerIdentityResult);
@@ -159,10 +159,10 @@ public class AwsCredentialVerifierTest {
         awsParameters.put("secretKey", "b");
         CloudCredential cloudCredential = new CloudCredential("id", "name", awsParameters, false);
 
-        AmazonIdentityManagement amazonIdentityManagement = mock(AmazonIdentityManagement.class);
+        AmazonIdentityManagementClient amazonIdentityManagement = mock(AmazonIdentityManagementClient.class);
         when(awsClient.createAmazonIdentityManagement(any(AwsCredentialView.class))).thenReturn(amazonIdentityManagement);
 
-        AWSSecurityTokenService awsSecurityTokenService = mock(AWSSecurityTokenService.class);
+        AWSSecurityTokenServiceClient awsSecurityTokenService = mock(AWSSecurityTokenServiceClient.class);
         GetCallerIdentityResult getCallerIdentityResult = new GetCallerIdentityResult();
         getCallerIdentityResult.setArn("arn");
         when(awsSecurityTokenService.getCallerIdentity(any(GetCallerIdentityRequest.class))).thenReturn(getCallerIdentityResult);

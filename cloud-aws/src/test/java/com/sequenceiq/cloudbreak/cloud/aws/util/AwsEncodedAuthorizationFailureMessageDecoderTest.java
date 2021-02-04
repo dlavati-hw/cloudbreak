@@ -20,12 +20,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.AWSSecurityTokenServiceException;
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageRequest;
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageResult;
 import com.github.jknack.handlebars.internal.Files;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +40,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
     private AwsClient awsClient;
 
     @Mock
-    private AWSSecurityTokenService awsSecurityTokenService;
+    private AWSSecurityTokenServiceClient awsSecurityTokenService;
 
     @Mock
     private AwsCredentialView awsCredentialView;

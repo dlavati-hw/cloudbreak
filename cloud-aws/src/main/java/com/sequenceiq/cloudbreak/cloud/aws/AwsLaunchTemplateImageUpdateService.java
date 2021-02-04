@@ -4,10 +4,10 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.GetTemplateRequest;
 import com.amazonaws.services.cloudformation.model.GetTemplateResult;
 import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.model.CloudResource;
@@ -26,7 +26,7 @@ public class AwsLaunchTemplateImageUpdateService {
     public void updateImage(AuthenticatedContext authenticatedContext, CloudStack stack, CloudResource cfResource) {
         AwsCredentialView credentialView = new AwsCredentialView(authenticatedContext.getCloudCredential());
         String regionName = authenticatedContext.getCloudContext().getLocation().getRegion().getRegionName();
-        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationClient(credentialView, regionName);
+        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
 
         String cfStackName = cfResource.getName();
         String cfTemplate = getCfTemplate(cfResource, cloudFormationClient);
