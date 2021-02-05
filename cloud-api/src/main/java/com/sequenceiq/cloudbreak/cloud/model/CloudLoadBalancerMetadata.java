@@ -12,11 +12,14 @@ public class CloudLoadBalancerMetadata {
 
     private final String ip;
 
-    public CloudLoadBalancerMetadata(LoadBalancerType type, String cloudDns, String hostedZoneId, String ip) {
+    private final String name;
+
+    public CloudLoadBalancerMetadata(LoadBalancerType type, String cloudDns, String hostedZoneId, String ip, String name) {
         this.type = type;
         this.cloudDns = cloudDns;
         this.hostedZoneId = hostedZoneId;
         this.ip = ip;
+        this.name = name;
     }
 
     public LoadBalancerType getType() {
@@ -33,5 +36,9 @@ public class CloudLoadBalancerMetadata {
 
     public String getIp() {
         return ip;
+    }
+
+    public String getName() {
+        return name;
     }
 }

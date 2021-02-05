@@ -393,6 +393,10 @@ public class StackService implements ResourceIdProvider, ResourceNameProvider {
         return stackRepository.findByEnvironmentCrnAndStackType(environmentCrn, stackType);
     }
 
+    public List<Stack> getStackByEnvironmentCrnAndStackType(String environmentCrn, StackType stackType, Long workspaceId) {
+        return stackRepository.findByEnvironmentCrnStackTypeAndWorkspaceId(environmentCrn, stackType, workspaceId);
+    }
+
     public StackV4Response getByNameInWorkspaceWithEntries(String name, Long workspaceId, Set<String> entries, User user, StackType stackType) {
         try {
             return transactionService.required(() -> {

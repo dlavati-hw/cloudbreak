@@ -401,6 +401,13 @@ public class OpenStackResourceConnector implements ResourceConnector<Object> {
         return updateHeatStack(authenticatedContext, resources, heatTemplate, parameters);
     }
 
+    @Override
+    public List<CloudResourceStatus> updateLoadBalancers(AuthenticatedContext authenticatedContext, CloudStack stack,
+            PersistenceNotifier persistenceNotifier) {
+        // no-op
+        return List.of();
+    }
+
     private List<CloudResourceStatus> updateHeatStack(AuthenticatedContext authenticatedContext, List<CloudResource> resources, String heatTemplate,
             Map<String, String> parameters) {
         CloudResource resource = utils.getHeatResource(resources);

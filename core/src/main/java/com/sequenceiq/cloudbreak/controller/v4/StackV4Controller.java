@@ -366,6 +366,12 @@ public class StackV4Controller extends NotificationController implements StackV4
     }
 
     @Override
+    @CheckPermissionByAccount(action = AuthorizationResourceAction.POWERUSER_ONLY)
+    public FlowIdentifier updateLoadBalancers(Long workspaceId, String name, @AccountId String accountId) {
+        return stackOperations.updateLoadBalancers(NameOrCrn.ofName(name), restRequestThreadLocalService.getRequestedWorkspaceId());
+    }
+
+    @Override
     @InternalOnly
     public FlowIdentifier updateLoadBalancersInternal(Long workspaceId, String name, @InitiatorUserCrn String initiatorUserCrn) {
         return stackOperations.updateLoadBalancers(NameOrCrn.ofName(name), restRequestThreadLocalService.getRequestedWorkspaceId());

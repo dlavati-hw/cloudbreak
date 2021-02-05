@@ -194,7 +194,8 @@ public class AwsMetadataCollector implements MetadataCollector {
                     type,
                     loadBalancer.getDNSName(),
                     loadBalancer.getCanonicalHostedZoneId(),
-                    null
+                    null,
+                    loadBalancerName
                 ));
                 LOGGER.debug("Saved metdata for load balancer {}: DNS {}, zone id {}", loadBalancerName, loadBalancer.getDNSName(),
                     loadBalancer.getCanonicalHostedZoneId());

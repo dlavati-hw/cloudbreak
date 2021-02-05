@@ -281,6 +281,13 @@ public class YarnResourceConnector implements ResourceConnector<Object> {
         throw new TemplatingNotSupportedException();
     }
 
+    @Override
+    public List<CloudResourceStatus> updateLoadBalancers(AuthenticatedContext authenticatedContext, CloudStack stack,
+            PersistenceNotifier persistenceNotifier) {
+        // no-op
+        return List.of();
+    }
+
     private String createApplicationName(AuthenticatedContext ac) {
         CloudContext context = ac.getCloudContext();
         String name = context.getName();

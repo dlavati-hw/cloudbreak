@@ -316,4 +316,11 @@ public class AzureResourceConnector extends AbstractResourceConnector {
     public String getDBStackTemplate() {
         return azureDatabaseResourceService.getDBStackTemplate();
     }
+
+    @Override
+    public List<CloudResourceStatus> updateLoadBalancers(AuthenticatedContext authenticatedContext, CloudStack stack,
+            PersistenceNotifier persistenceNotifier) {
+        // no-op
+        return List.of();
+    }
 }

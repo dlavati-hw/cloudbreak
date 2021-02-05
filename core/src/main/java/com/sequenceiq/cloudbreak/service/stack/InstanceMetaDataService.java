@@ -202,4 +202,8 @@ public class InstanceMetaDataService {
     public Optional<InstanceMetaData> findByHostname(Long stackId, String hostName) {
         return repository.findHostInStack(stackId, hostName);
     }
+
+    public Set<InstanceMetaData> findByInstanceGroup(InstanceGroup instanceGroup) {
+        return repository.findAllByInstanceGroup(instanceGroup);
+    }
 }

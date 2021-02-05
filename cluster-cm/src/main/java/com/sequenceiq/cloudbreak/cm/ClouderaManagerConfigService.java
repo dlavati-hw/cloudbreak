@@ -28,9 +28,13 @@ public class ClouderaManagerConfigService {
 
     static final String KNOX_AUTORESTART_ON_STOP = "autorestart_on_stop";
 
+    static final String HUE_KNOX_PROXYHOSTS = "knox_proxyhosts";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ClouderaManagerConfigService.class);
 
     private static final String KNOX_SERVICE = "KNOX";
+
+    private static final String HUE_SERVICE = "HUE";
 
     @Inject
     private ClouderaManagerApiFactory clouderaManagerApiFactory;
@@ -98,6 +102,40 @@ public class ClouderaManagerConfigService {
                     .findFirst();
         } catch (ApiException e) {
             LOGGER.debug("Failed to get KNOX service name from Cloudera Manager.", e);
+            return Optional.empty();
+        }
+    }
+
+    public void modifyHueKnoxProxyHosts(ApiClient client, String clusterName, String knoxProxyhosts) {
+        ServicesResourceApi servicesResourceApi = clouderaManagerApiFactory.getServicesResourceApi(client);
+        LOGGER.info("Trying to modify Hue knox_proxyhosts to {}", knoxProxyhosts);
+        getHueServiceName(clusterName, servicesResourceApi)
+            .ifPresentOrElse(
+                modifyHueKnoxProxyHosts(clusterName, servicesResourceApi, knoxProxyhosts),
+                () -> LOGGER.info("HUE service name is missing, skip modifying the knox_proxyhosts property."));
+    }
+
+    private Consumer<String> modifyHueKnoxProxyHosts(String clusterName, ServicesResourceApi servicesResourceApi, String knoxProxyhosts) {
+        return knoxServiceName -> {
+            ApiConfig autorestartConfig = new ApiConfig().name(HUE_KNOX_PROXYHOSTS).value(knoxProxyhosts.toString());
+            ApiServiceConfig serviceConfig = new ApiServiceConfig().addItemsItem(autorestartConfig);
+            try {
+                servicesResourceApi.updateServiceConfig(clusterName, knoxServiceName, "", serviceConfig);
+            } catch (ApiException e) {
+                LOGGER.debug("Failed to set autorestart_on_stop to KNOX in Cloudera Manager.", e);
+            }
+        };
+    }
+
+    private Optional<String> getHueServiceName(String clusterName, ServicesResourceApi servicesResourceApi) {
+        try {
+            ApiServiceList serviceList = servicesResourceApi.readServices(clusterName, DataView.SUMMARY.name());
+            return serviceList.getItems().stream()
+                .filter(service -> HUE_SERVICE.equals(service.getType()))
+                .map(ApiService::getName)
+                .findFirst();
+        } catch (ApiException e) {
+            LOGGER.debug("Failed to get HUE service name from Cloudera Manager.", e);
             return Optional.empty();
         }
     }

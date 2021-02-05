@@ -610,4 +610,11 @@ public class ClouderaManagerModificationService implements ClusterModificationSe
         pollingResultErrorHandler.handlePollingResult(pollingResult, cancellationMessage, timeoutMessage);
     }
 
+    @Override
+    public void updateHueKnoxProxyhosts(String knoxProxyhosts) throws Exception {
+        configService.modifyHueKnoxProxyHosts(apiClient, stack.getName(), knoxProxyhosts);
+        ClustersResourceApi clustersResourceApi = clouderaManagerApiFactory.getClustersResourceApi(apiClient);
+        restartStaleServices(clustersResourceApi);
+    }
+
 }

@@ -433,6 +433,13 @@ public interface StackV4Endpoint {
             @QueryParam("initiatorUserCrn") String initiatorUserCrn);
 
     @PUT
+    @Path("{name}/update_load_balancers")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = UPDATE_LOAD_BALANCERS, nickname = "updateLoadBalancers")
+    FlowIdentifier updateLoadBalancers(@PathParam("workspaceId") Long workspaceId, @PathParam("name") String name,
+            @AccountId @QueryParam("accountId") String accountId);
+
+    @PUT
     @Path("internal/{name}/update_load_balancers")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = UPDATE_LOAD_BALANCERS, nickname = "updateLoadBalancersInternal")

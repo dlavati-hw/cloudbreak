@@ -59,6 +59,10 @@ public interface StackRepository extends WorkspaceResourceRepository<Stack, Long
             + "WHERE s.environmentCrn= :environmentCrn AND s.type = :type AND s.terminated=null")
     List<StackStatusView> findByEnvironmentCrnAndStackType(@Param("environmentCrn") String environmentCrn, @Param("type") StackType type);
 
+    @Query("SELECT s FROM Stack s WHERE s.environmentCrn= :environmentCrn AND s.type = :type AND s.workspace.id= :workspaceId AND s.terminated=null")
+    List<Stack> findByEnvironmentCrnStackTypeAndWorkspaceId(@Param("environmentCrn") String environmentCrn, @Param("type") StackType type,
+            @Param("workspaceId") Long workspaceId);
+
     @Query("SELECT s FROM Stack s WHERE s.name= :name AND s.workspace.id= :workspaceId AND " + SHOW_TERMINATED_CLUSTERS_IF_REQUESTED)
     Optional<Stack> findByNameAndWorkspaceIdWithLists(@Param("name") String name, @Param("workspaceId") Long workspaceId,
             @Param("showTerminated") Boolean showTerminated,

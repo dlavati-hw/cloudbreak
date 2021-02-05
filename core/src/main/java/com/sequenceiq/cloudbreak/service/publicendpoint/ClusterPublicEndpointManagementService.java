@@ -33,6 +33,13 @@ public class ClusterPublicEndpointManagementService {
         return certGenerationWasSuccessful;
     }
 
+    public boolean provisionLoadBalancer(Stack stack) {
+        if (!gatewayPublicEndpointManagementService.renewCertificate(stack)) {
+            LOGGER.warn("Certificate was not updated with load balancer SAN in PEM service.");
+        }
+        return gatewayPublicEndpointManagementService.updateDnsEntryForLoadBalancers(stack);
+    }
+
     public void terminate(Stack stack) {
         gatewayPublicEndpointManagementService.deleteDnsEntry(stack, null);
         gatewayPublicEndpointManagementService.deleteLoadBalancerDnsEntry(stack, null);
@@ -91,7 +98,7 @@ public class ClusterPublicEndpointManagementService {
         }
     }
 
-    public void registerDomainsWithFreeIPA(Stack stack) {
+    public void registerLoadBalancerWithFreeIPA(Stack stack) {
         freeIPAEndpointManagementService.registerLoadBalancerDomainWithFreeIPA(stack);
     }
 }

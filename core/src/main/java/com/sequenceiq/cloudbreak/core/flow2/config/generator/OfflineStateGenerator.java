@@ -328,6 +328,11 @@ public class OfflineStateGenerator {
         }
 
         @Override
+        public List<Stack> findByEnvironmentCrnStackTypeAndWorkspaceId(String environmentCrn, StackType type, Long workspaceId) {
+            return List.of();
+        }
+
+        @Override
         public Optional<Stack> findByNameAndWorkspaceIdWithLists(String name, Long workspaceId, Boolean showTerminated, Long terminatedAfter) {
             return Optional.empty();
         }

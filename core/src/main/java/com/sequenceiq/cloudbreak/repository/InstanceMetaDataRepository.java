@@ -121,4 +121,7 @@ public interface InstanceMetaDataRepository extends CrudRepository<InstanceMetaD
     int updateStatusIfNotTerminated(@Param("id") Long id, @Param("newInstanceStatus") InstanceStatus newInstanceStatus,
             @Param("newStatusReason") String newStatusReason);
 
+    @EntityGraph(value = "InstanceMetaData.instanceGroup", type = EntityGraph.EntityGraphType.LOAD)
+    Set<InstanceMetaData> findAllByInstanceGroup(InstanceGroup instanceGroup);
+
 }
