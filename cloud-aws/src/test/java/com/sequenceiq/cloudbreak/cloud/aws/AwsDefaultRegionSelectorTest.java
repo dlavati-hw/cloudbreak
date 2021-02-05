@@ -24,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ec2.model.DescribeRegionsRequest;
 import com.amazonaws.services.ec2.model.DescribeRegionsResult;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.model.CloudCredential;
 import com.sequenceiq.cloudbreak.cloud.model.Region;
@@ -35,7 +35,7 @@ class AwsDefaultRegionSelectorTest {
     private static final String GLOBAL_DEFAULT_ZONE = "us-east-1";
 
     @Mock
-    private AmazonEc2RetryClient ec2Client;
+    private AmazonEc2Client ec2Client;
 
     @Mock
     private AwsPlatformResources platformResources;

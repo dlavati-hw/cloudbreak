@@ -79,7 +79,7 @@ import com.amazonaws.services.kms.model.ListKeysResult;
 import com.google.common.base.Strings;
 import com.sequenceiq.cloudbreak.cloud.PlatformResources;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonDynamoDBClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonIdentityManagementClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonKmsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.util.AwsPageCollector;
@@ -356,7 +356,7 @@ public class AwsPlatformResources implements PlatformResources {
 
     @Override
     public CloudNetworks networks(CloudCredential cloudCredential, Region region, Map<String, String> filters) {
-        AmazonEc2RetryClient ec2Client = awsClient.createEc2RetryClient(new AwsCredentialView(cloudCredential), region.value());
+        AmazonEc2Client ec2Client = awsClient.createEc2Client(new AwsCredentialView(cloudCredential), region.value());
         try {
             LOGGER.debug("Describing route tables in region {}", region.getRegionName());
             List<RouteTable> allRouteTables = AwsPageCollector.getAllRouteTables(ec2Client, new DescribeRouteTablesRequest());
@@ -393,7 +393,7 @@ public class AwsPlatformResources implements PlatformResources {
         return describeVpcsRequest;
     }
 
-    private Set<CloudNetwork> getCloudNetworks(AmazonEc2RetryClient ec2Client,
+    private Set<CloudNetwork> getCloudNetworks(AmazonEc2Client ec2Client,
             List<RouteTable> describeRouteTablesResult, DescribeVpcsResult describeVpcsResult) {
 
         Set<CloudNetwork> cloudNetworks = new HashSet<>();
@@ -413,7 +413,7 @@ public class AwsPlatformResources implements PlatformResources {
         return cloudNetworks;
     }
 
-    private List<Subnet> getSubnets(AmazonEc2RetryClient ec2Client, Vpc vpc) {
+    private List<Subnet> getSubnets(AmazonEc2Client ec2Client, Vpc vpc) {
         List<Subnet> awsSubnets = new ArrayList<>();
         DescribeSubnetsResult describeSubnetsResult = null;
         do {
@@ -482,7 +482,7 @@ public class AwsPlatformResources implements PlatformResources {
             // If region is provided then should filter for those region
             if (regionMatch(actualRegion, region)) {
                 Set<CloudSshKey> cloudSshKeys = new HashSet<>();
-                AmazonEc2RetryClient ec2Client = awsClient.createEc2RetryClient(new AwsCredentialView(cloudCredential), actualRegion.value());
+                AmazonEc2Client ec2Client = awsClient.createEc2Client(new AwsCredentialView(cloudCredential), actualRegion.value());
 
                 //create sshkey filter view
                 PlatformResourceSshKeyFilterView filter = new PlatformResourceSshKeyFilterView(filters);
@@ -509,7 +509,7 @@ public class AwsPlatformResources implements PlatformResources {
     public CloudSecurityGroups securityGroups(CloudCredential cloudCredential, Region region, Map<String, String> filters) {
         Map<String, Set<CloudSecurityGroup>> result = new HashMap<>();
         Set<CloudSecurityGroup> cloudSecurityGroups = new HashSet<>();
-        AmazonEc2RetryClient ec2Client = awsClient.createEc2RetryClient(new AwsCredentialView(cloudCredential), region.value());
+        AmazonEc2Client ec2Client = awsClient.createEc2Client(new AwsCredentialView(cloudCredential), region.value());
 
         //create securitygroup filter view
         PlatformResourceSecurityGroupFilterView filter = new PlatformResourceSecurityGroupFilterView(filters);
@@ -538,7 +538,7 @@ public class AwsPlatformResources implements PlatformResources {
         return new CloudSecurityGroups(result);
     }
 
-    private List<SecurityGroup> fetchSecurityGroups(AmazonEc2RetryClient ec2Client, DescribeSecurityGroupsRequest describeSecurityGroupsRequest) {
+    private List<SecurityGroup> fetchSecurityGroups(AmazonEc2Client ec2Client, DescribeSecurityGroupsRequest describeSecurityGroupsRequest) {
         try {
             return ec2Client.describeSecurityGroups(describeSecurityGroupsRequest).getSecurityGroups();
         } catch (AmazonEC2Exception e) {
@@ -553,7 +553,7 @@ public class AwsPlatformResources implements PlatformResources {
     @Override
     @Cacheable(cacheNames = "cloudResourceRegionCache", key = "{ #cloudCredential?.id, #availabilityZonesNeeded }")
     public CloudRegions regions(CloudCredential cloudCredential, Region region, Map<String, String> filters, boolean availabilityZonesNeeded) {
-        AmazonEc2RetryClient ec2Client = awsClient.createEc2RetryClient(new AwsCredentialView(cloudCredential));
+        AmazonEc2Client ec2Client = awsClient.createEc2Client(new AwsCredentialView(cloudCredential));
         Map<Region, List<AvailabilityZone>> regionListMap = new HashMap<>();
         Map<Region, String> displayNames = new HashMap<>();
         Map<Region, Coordinate> coordinates = new HashMap<>();
@@ -628,7 +628,7 @@ public class AwsPlatformResources implements PlatformResources {
         }
     }
 
-    private DescribeRegionsResult describeRegionsResult(AmazonEc2RetryClient ec2Client) {
+    private DescribeRegionsResult describeRegionsResult(AmazonEc2Client ec2Client) {
         LOGGER.debug("Getting regions");
         try {
             DescribeRegionsRequest describeRegionsRequest = new DescribeRegionsRequest();
@@ -685,7 +685,7 @@ public class AwsPlatformResources implements PlatformResources {
 
         for (Entry<Region, List<AvailabilityZone>> regionListEntry : regions.getCloudRegions().entrySet()) {
             if (region == null || Strings.isNullOrEmpty(region.value()) || regionListEntry.getKey().value().equals(region.value())) {
-                AmazonEc2RetryClient ec2Client = awsClient.createEc2RetryClient(new AwsCredentialView(cloudCredential), regionListEntry.getKey().value());
+                AmazonEc2Client ec2Client = awsClient.createEc2Client(new AwsCredentialView(cloudCredential), regionListEntry.getKey().value());
 
                 DescribeInternetGatewaysRequest describeInternetGatewaysRequest = new DescribeInternetGatewaysRequest();
                 DescribeInternetGatewaysResult describeInternetGatewaysResult = ec2Client.describeInternetGateways(describeInternetGatewaysRequest);

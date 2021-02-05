@@ -26,7 +26,7 @@ import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AuthenticatedContextView;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -68,8 +68,8 @@ public class AwsTerminateService {
         AwsCredentialView credentialView = new AwsCredentialView(ac.getCloudCredential());
         AuthenticatedContextView authenticatedContextView = new AuthenticatedContextView(ac);
         String regionName = authenticatedContextView.getRegion();
-        AmazonEc2RetryClient amazonEC2Client = authenticatedContextView.getAmazonEC2Client();
-        AmazonCloudFormationClient amazonCloudFormationClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
+        AmazonEc2Client amazonEC2Client = authenticatedContextView.getAmazonEC2Client();
+        AmazonCloudFormationClient amazonCloudFormationClient = awsClient.createCloudFormationClient(credentialView, regionName);
 
         awsCloudWatchService.deleteCloudWatchAlarmsForSystemFailures(stack, regionName, credentialView);
         waitAndDeleteCloudformationStack(ac, stack, resources, amazonCloudFormationClient);
@@ -137,7 +137,7 @@ public class AwsTerminateService {
         return Boolean.TRUE;
     }
 
-    private void deleteKeyPair(AuthenticatedContext ac, CloudStack stack, AmazonEc2RetryClient amazonEC2Client, AwsCredentialView credentialView,
+    private void deleteKeyPair(AuthenticatedContext ac, CloudStack stack, AmazonEc2Client amazonEC2Client, AwsCredentialView credentialView,
             String regionName) {
         LOGGER.debug("Deleting keypairs");
         if (!awsClient.existingKeyPairNameSpecified(stack.getInstanceAuthentication())) {
@@ -155,10 +155,10 @@ public class AwsTerminateService {
     private void resumeAutoScalingPolicies(AuthenticatedContext ac, CloudStack stack) {
         for (Group instanceGroup : stack.getGroups()) {
             try {
-                String asGroupName = cfStackUtil.getAutoscalingGroupName(ac, instanceGroup.getName(), ac.getCloudContext().getLocation().getRegion().value());
+                String regionName = ac.getCloudContext().getLocation().getRegion().value();
+                String asGroupName = cfStackUtil.getAutoscalingGroupName(ac, instanceGroup.getName(), regionName);
                 if (asGroupName != null) {
-                    AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingRetryClient(new AwsCredentialView(ac.getCloudCredential()),
-                            ac.getCloudContext().getLocation().getRegion().value());
+                    AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingClient(new AwsCredentialView(ac.getCloudCredential()), regionName);
                     List<AutoScalingGroup> asGroups = amazonASClient.describeAutoScalingGroups(new DescribeAutoScalingGroupsRequest()
                             .withAutoScalingGroupNames(asGroupName)).getAutoScalingGroups();
                     if (!asGroups.isEmpty()) {

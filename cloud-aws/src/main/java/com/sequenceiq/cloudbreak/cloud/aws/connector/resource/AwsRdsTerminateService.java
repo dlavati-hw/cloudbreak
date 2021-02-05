@@ -124,7 +124,7 @@ public class AwsRdsTerminateService {
             String regionName,
             DescribeStacksRequest describeStacksRequest
     ) {
-        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
+        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, regionName);
         cfClient.describeStacks(describeStacksRequest);
         DeleteStackRequest deleteStackRequest = awsStackRequestHelper.createDeleteStackRequest(cFStackName);
         cfClient.deleteStack(deleteStackRequest);

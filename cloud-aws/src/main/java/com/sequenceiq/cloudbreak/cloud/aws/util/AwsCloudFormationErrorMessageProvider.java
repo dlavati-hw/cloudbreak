@@ -34,13 +34,13 @@ public class AwsCloudFormationErrorMessageProvider {
     }
 
     public String getErrorReason(AwsCredentialView credentialView, String region, String stackName, ResourceStatus resourceErrorStatus) {
-        AmazonCloudFormationClient cfRetryClient = awsClient.createCloudFormationRetryClient(credentialView, region);
+        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, region);
         DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackName);
-        DescribeStacksResult describeStacksResult = cfRetryClient.describeStacks(describeStacksRequest);
+        DescribeStacksResult describeStacksResult = cfClient.describeStacks(describeStacksRequest);
         String stackStatusReason = describeStacksResult.getStacks().get(0).getStackStatusReason();
 
         DescribeStackResourcesRequest describeStackResourcesRequest = new DescribeStackResourcesRequest().withStackName(stackName);
-        DescribeStackResourcesResult describeStackResourcesResult = cfRetryClient.describeStackResources(describeStackResourcesRequest);
+        DescribeStackResourcesResult describeStackResourcesResult = cfClient.describeStackResources(describeStackResourcesRequest);
         String stackResourceStatusReasons = describeStackResourcesResult.getStackResources().stream()
                 .filter(stackResource -> ResourceStatus.fromValue(stackResource.getResourceStatus()).equals(resourceErrorStatus))
                 .map(stackResource -> getStackResourceMessage(credentialView, region, stackResource))

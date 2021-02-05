@@ -94,7 +94,7 @@ public class AwsRdsTerminateServiceTest {
         when(location.getRegion()).thenReturn(region);
         when(region.value()).thenReturn(REGION);
         when(awsStackRequestHelper.createDeleteStackRequest(STACK_NAME)).thenReturn(deleteStackRequest);
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
         when(amazonCloudFormationClient.waiters()).thenReturn(amazonCloudFormationWaiters);
         when(amazonCloudFormationWaiters.stackDeleteComplete()).thenReturn(describeStacksRequestWaiter);
         when(cloudContext.getId()).thenReturn(ID);
@@ -103,7 +103,7 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldCallDeleteStackAndWaitForDeleteComplete() throws Exception {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenReturn(amazonCloudFormationClient);
 
         victim.terminate(authenticatedContext, null, false, persistenceNotifier, Collections.emptyList(), true);
 
@@ -113,7 +113,7 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldNotCallDeleteWhenAlreadyDeleted() throws Exception {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION)))
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION)))
                 .thenThrow(new AmazonServiceException(STACK_NAME + " does not exist"));
 
         victim.terminate(authenticatedContext, null, false, persistenceNotifier, Collections.emptyList(), true);
@@ -123,7 +123,7 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldThrowAmazonServiceExceptionWhenDescriptionNotDoesNotExists() {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new AmazonServiceException(""));
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new AmazonServiceException(""));
 
         Assertions.assertThrows(AmazonServiceException.class,
                 () -> victim.terminate(authenticatedContext, null, false, persistenceNotifier, Collections.emptyList(), true));
@@ -131,7 +131,7 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldNotThrowAmazonServiceExceptionWhenItWasThrownAndTerminationIsForced() throws Exception {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new AmazonServiceException(""));
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new AmazonServiceException(""));
 
         victim.terminate(authenticatedContext, null, true, persistenceNotifier, Collections.emptyList(), true);
 
@@ -140,7 +140,7 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldWrapRuntineExceptionWithCloudConnectorException() {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new RuntimeException());
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new RuntimeException());
 
         Assertions.assertThrows(CloudConnectorException.class,
                 () -> victim.terminate(authenticatedContext, null, false, persistenceNotifier, Collections.emptyList(), true));
@@ -148,7 +148,7 @@ public class AwsRdsTerminateServiceTest {
 
     @Test
     public void shouldNotFailOnRuntimeExceptionWhenTerminationIsForced() throws Exception {
-        when(awsClient.createCloudFormationRetryClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new RuntimeException());
+        when(awsClient.createCloudFormationClient(Mockito.any(AwsCredentialView.class), Mockito.eq(REGION))).thenThrow(new RuntimeException());
 
         victim.terminate(authenticatedContext, null, true, persistenceNotifier, Collections.emptyList(), true);
 

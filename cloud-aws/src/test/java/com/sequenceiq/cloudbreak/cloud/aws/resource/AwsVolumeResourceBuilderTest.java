@@ -31,7 +31,7 @@ import com.amazonaws.services.ec2.model.TagSpecification;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsPlatformParameters;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsTaggingService;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.context.AwsContext;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -129,7 +129,7 @@ class AwsVolumeResourceBuilderTest {
     private Region region;
 
     @Mock
-    private AmazonEc2RetryClient amazonEC2Client;
+    private AmazonEc2Client amazonEC2Client;
 
     @Captor
     private ArgumentCaptor<CreateVolumeRequest> createVolumeRequestCaptor;
@@ -140,7 +140,7 @@ class AwsVolumeResourceBuilderTest {
         when(cloudContext.getLocation()).thenReturn(location);
         when(location.getRegion()).thenReturn(region);
         when(region.value()).thenReturn(REGION_NAME);
-        when(awsClient.createEc2RetryClient(isA(AwsCredentialView.class), eq(REGION_NAME))).thenReturn(amazonEC2Client);
+        when(awsClient.createEc2Client(isA(AwsCredentialView.class), eq(REGION_NAME))).thenReturn(amazonEC2Client);
         when(cloudStack.getTags()).thenReturn(TAGS);
         when(awsTaggingService.prepareEc2Tags(TAGS)).thenReturn(EC2_TAGS);
     }

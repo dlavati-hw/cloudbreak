@@ -84,7 +84,7 @@ public class AwsLaunchTemplateImageUpdateServiceTest {
         when(stack.getGroups()).thenReturn(List.of(group));
         when(stack.getImage()).thenReturn(image);
         when(image.getImageName()).thenReturn(IMAGE_NAME);
-        when(awsClient.createCloudFormationRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(cloudFormationClient);
+        when(awsClient.createCloudFormationClient(any(AwsCredentialView.class), anyString())).thenReturn(cloudFormationClient);
         when(awsClient.createAutoScalingClient(any(AwsCredentialView.class), anyString())).thenReturn(autoScalingClient);
     }
 

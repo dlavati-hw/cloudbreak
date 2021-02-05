@@ -37,7 +37,7 @@ import com.amazonaws.waiters.Waiter;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
 import com.sequenceiq.cloudbreak.cloud.model.AvailabilityZone;
@@ -92,9 +92,9 @@ class AwsDownscaleServiceTest {
                 Location.location(Region.region("eu-west-1"), AvailabilityZone.availabilityZone("eu-west-1a")), "1", "1"),
                 new CloudCredential());
         AmazonAutoScalingClient amazonAutoScalingClient = mock(AmazonAutoScalingClient.class);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
-        AmazonEc2RetryClient amazonEC2Client = mock(AmazonEc2RetryClient.class);
-        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEC2Client);
+        when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
+        AmazonEc2Client amazonEC2Client = mock(AmazonEc2Client.class);
+        when(awsClient.createEc2Client(any(), anyString())).thenReturn(amazonEC2Client);
         AmazonEC2Waiters amazonEC2Waiters = mock(AmazonEC2Waiters.class);
         when(amazonEC2Client.waiters()).thenReturn(amazonEC2Waiters);
         Waiter waiter = mock(Waiter.class);
@@ -140,9 +140,9 @@ class AwsDownscaleServiceTest {
                 Location.location(Region.region("eu-west-1"), AvailabilityZone.availabilityZone("eu-west-1a")), "1", "1"),
                 new CloudCredential());
         AmazonAutoScalingClient amazonAutoScalingClient = mock(AmazonAutoScalingClient.class);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
-        AmazonEc2RetryClient amazonEC2Client = mock(AmazonEc2RetryClient.class);
-        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEC2Client);
+        when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
+        AmazonEc2Client amazonEC2Client = mock(AmazonEc2Client.class);
+        when(awsClient.createEc2Client(any(), anyString())).thenReturn(amazonEC2Client);
         AmazonEC2Waiters amazonEC2Waiters = mock(AmazonEC2Waiters.class);
         when(amazonEC2Client.waiters()).thenReturn(amazonEC2Waiters);
         Waiter waiter = mock(Waiter.class);
@@ -190,9 +190,9 @@ class AwsDownscaleServiceTest {
         autoScalingGroup.setInstances(List.of(new Instance().withInstanceId("i-worker1")));
         describeAutoScalingGroupsResult.setAutoScalingGroups(List.of(autoScalingGroup));
         when(amazonAutoScalingClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
-        AmazonEc2RetryClient amazonEC2Client = mock(AmazonEc2RetryClient.class);
-        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEC2Client);
+        when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
+        AmazonEc2Client amazonEC2Client = mock(AmazonEc2Client.class);
+        when(awsClient.createEc2Client(any(), anyString())).thenReturn(amazonEC2Client);
         AmazonEC2Waiters amazonEC2Waiters = mock(AmazonEC2Waiters.class);
         when(amazonEC2Client.waiters()).thenReturn(amazonEC2Waiters);
         Waiter waiter = mock(Waiter.class);
@@ -227,9 +227,9 @@ class AwsDownscaleServiceTest {
             Location.location(Region.region("eu-west-1"), AvailabilityZone.availabilityZone("eu-west-1a")), "1", "1"),
             new CloudCredential());
         AmazonAutoScalingClient amazonAutoScalingClient = mock(AmazonAutoScalingClient.class);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
-        AmazonEc2RetryClient amazonEC2Client = mock(AmazonEc2RetryClient.class);
-        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEC2Client);
+        when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
+        AmazonEc2Client amazonEC2Client = mock(AmazonEc2Client.class);
+        when(awsClient.createEc2Client(any(), anyString())).thenReturn(amazonEC2Client);
         AmazonEC2Waiters amazonEC2Waiters = mock(AmazonEC2Waiters.class);
         when(amazonEC2Client.waiters()).thenReturn(amazonEC2Waiters);
         Waiter waiter = mock(Waiter.class);

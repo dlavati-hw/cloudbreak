@@ -54,13 +54,13 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ec2.waiters.AmazonEC2Waiters;
 import com.sequenceiq.cloudbreak.service.Retry;
 
-public class AmazonEc2RetryClient extends AmazonClient {
+public class AmazonEc2Client extends AmazonClient {
 
     private final AmazonEC2 client;
 
     private final Retry retry;
 
-    public AmazonEc2RetryClient(AmazonEC2 client, Retry retry) {
+    public AmazonEc2Client(AmazonEC2 client, Retry retry) {
         this.client = client;
         this.retry = retry;
     }

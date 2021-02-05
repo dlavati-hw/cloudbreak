@@ -43,7 +43,7 @@ import com.amazonaws.services.elasticloadbalancingv2.model.TargetHealthDescripti
 import com.google.common.base.Splitter;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonElasticLoadBalancingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.loadbalancer.AwsLoadBalancerScheme;
 import com.sequenceiq.cloudbreak.cloud.aws.loadbalancer.AwsTargetGroup;
@@ -78,7 +78,7 @@ public class CloudFormationStackUtil {
             backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 10000)
     )
     public String getAutoscalingGroupName(AuthenticatedContext ac, String instanceGroup, String region) {
-        AmazonCloudFormationClient amazonCfClient = awsClient.createCloudFormationRetryClient(new AwsCredentialView(ac.getCloudCredential()), region);
+        AmazonCloudFormationClient amazonCfClient = awsClient.createCloudFormationClient(new AwsCredentialView(ac.getCloudCredential()), region);
         return getAutoscalingGroupName(ac, amazonCfClient, instanceGroup);
     }
 
@@ -259,7 +259,7 @@ public class CloudFormationStackUtil {
 
     public FileSystemDescription getEfsByFileSystemId(AuthenticatedContext ac, String fileSystemId) {
         String region = ac.getCloudContext().getLocation().getRegion().value();
-        AmazonEfsRetryClient amazonEfsClient =
+        AmazonEfsClient amazonEfsClient =
                 awsClient.createElasticFileSystemClient(new AwsCredentialView(ac.getCloudCredential()), region);
 
         DescribeFileSystemsResult efsResult = amazonEfsClient.describeFileSystems(new DescribeFileSystemsRequest()
@@ -278,7 +278,7 @@ public class CloudFormationStackUtil {
     private String getResourceArnByLogicalId(AuthenticatedContext ac, String logicalId, String region) {
         String cFStackName = getCfStackName(ac);
         AmazonCloudFormationClient amazonCfClient =
-            awsClient.createCloudFormationRetryClient(new AwsCredentialView(ac.getCloudCredential()), region);
+            awsClient.createCloudFormationClient(new AwsCredentialView(ac.getCloudCredential()), region);
         DescribeStackResourceResult result = amazonCfClient.describeStackResource(new DescribeStackResourceRequest()
             .withStackName(cFStackName)
             .withLogicalResourceId(logicalId));

@@ -42,7 +42,7 @@ import com.sequenceiq.cloudbreak.cloud.aws.AwsTaggingService;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -129,9 +129,9 @@ class AwsUpscaleServiceTest {
         describeAutoScalingGroupsResult.setAutoScalingGroups(autoScalingGroups);
         when(amazonAutoScalingClient.describeAutoScalingGroups(any(DescribeAutoScalingGroupsRequest.class)))
                 .thenReturn(describeAutoScalingGroupsResult);
-        when(awsClient.createAutoScalingRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
-        when(awsClient.createCloudFormationRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
-        when(awsClient.createEc2RetryClient(any(), any())).thenReturn(mock(AmazonEc2RetryClient.class));
+        when(awsClient.createAutoScalingClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createCloudFormationClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createEc2Client(any(), any())).thenReturn(mock(AmazonEc2Client.class));
 
         when(cfStackUtil.getAutoscalingGroupName(any(AuthenticatedContext.class), any(AmazonCloudFormationClient.class), eq("worker")))
                 .thenReturn("workerASG");
@@ -180,7 +180,7 @@ class AwsUpscaleServiceTest {
         ArgumentCaptor<List<CloudResource>> captor = ArgumentCaptor.forClass(List.class);
         verify(awsComputeResourceService, times(1))
                 .buildComputeResourcesForUpscale(eq(authenticatedContext), eq(cloudStack), anyList(), captor.capture(), any(), any());
-        verify(awsTaggingService, times(1)).tagRootVolumes(eq(authenticatedContext), any(AmazonEc2RetryClient.class), eq(allInstances), eq(tags));
+        verify(awsTaggingService, times(1)).tagRootVolumes(eq(authenticatedContext), any(AmazonEc2Client.class), eq(allInstances), eq(tags));
         verify(awsCloudWatchService, times(1)).addCloudWatchAlarmsForSystemFailures(any(), eq("eu-west-1"),
                 any(AwsCredentialView.class));
         List<CloudResource> newInstances = captor.getValue();
@@ -228,8 +228,8 @@ class AwsUpscaleServiceTest {
         when(amazonAutoScalingClient.describeAutoScalingGroups(eq(request)))
                 .thenReturn(describeScaledAutoScalingGroupsResult);
 
-        when(awsClient.createAutoScalingRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
-        when(awsClient.createCloudFormationRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createAutoScalingClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createCloudFormationClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
 
         when(cfStackUtil.getAutoscalingGroupName(any(AuthenticatedContext.class), any(AmazonCloudFormationClient.class), eq("worker")))
                 .thenReturn("workerASG");
@@ -341,8 +341,8 @@ class AwsUpscaleServiceTest {
         when(amazonAutoScalingClient.describeAutoScalingGroups(eq(request)))
                 .thenReturn(describeScaledAutoScalingGroupsResult);
 
-        when(awsClient.createAutoScalingRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
-        when(awsClient.createCloudFormationRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createAutoScalingClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createCloudFormationClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
 
         when(cfStackUtil.getAutoscalingGroupName(any(AuthenticatedContext.class), any(AmazonCloudFormationClient.class), eq("worker")))
                 .thenReturn("workerASG");
@@ -444,9 +444,9 @@ class AwsUpscaleServiceTest {
         describeAutoScalingGroupsResult.setAutoScalingGroups(autoScalingGroups);
         when(amazonAutoScalingClient.describeAutoScalingGroups(any(DescribeAutoScalingGroupsRequest.class)))
             .thenReturn(describeAutoScalingGroupsResult);
-        when(awsClient.createAutoScalingRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
-        when(awsClient.createCloudFormationRetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
-        when(awsClient.createEc2RetryClient(any(), any())).thenReturn(mock(AmazonEc2RetryClient.class));
+        when(awsClient.createAutoScalingClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createCloudFormationClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createEc2Client(any(), any())).thenReturn(mock(AmazonEc2Client.class));
 
         when(cfStackUtil.getAutoscalingGroupName(any(AuthenticatedContext.class), any(AmazonCloudFormationClient.class), eq("worker")))
             .thenReturn("workerASG");

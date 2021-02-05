@@ -22,7 +22,7 @@ import com.google.common.collect.Multimap;
 import com.sequenceiq.cloudbreak.cloud.MetadataCollector;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.loadbalancer.AwsLoadBalancer;
 import com.sequenceiq.cloudbreak.cloud.aws.loadbalancer.converter.LoadBalancerTypeConverter;
 import com.sequenceiq.cloudbreak.cloud.aws.util.AwsLifeCycleMapper;
@@ -79,9 +79,9 @@ public class AwsMetadataCollector implements MetadataCollector {
         List<CloudVmMetaDataStatus> collectedCloudVmMetaDataStatuses = new ArrayList<>();
 
         String region = ac.getCloudContext().getLocation().getRegion().value();
-        AmazonCloudFormationClient amazonCFClient = awsClient.createCloudFormationRetryClient(new AwsCredentialView(ac.getCloudCredential()), region);
-        AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingRetryClient(new AwsCredentialView(ac.getCloudCredential()), region);
-        AmazonEc2RetryClient amazonEC2Client = new AuthenticatedContextView(ac).getAmazonEC2Client();
+        AmazonCloudFormationClient amazonCFClient = awsClient.createCloudFormationClient(new AwsCredentialView(ac.getCloudCredential()), region);
+        AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingClient(new AwsCredentialView(ac.getCloudCredential()), region);
+        AmazonEc2Client amazonEC2Client = new AuthenticatedContextView(ac).getAmazonEC2Client();
 
         Multimap<String, CloudInstance> instanceGroupMap = getInstanceGroupMap(vms);
 
@@ -165,7 +165,7 @@ public class AwsMetadataCollector implements MetadataCollector {
     }
 
     private List<Instance> collectInstancesForGroup(AuthenticatedContext ac, AmazonAutoScalingClient amazonASClient,
-            AmazonEc2RetryClient amazonEC2Client, AmazonCloudFormationClient amazonCFClient, String group) {
+            AmazonEc2Client amazonEC2Client, AmazonCloudFormationClient amazonCFClient, String group) {
 
         LOGGER.debug("Collect aws instances for group: {}", group);
 

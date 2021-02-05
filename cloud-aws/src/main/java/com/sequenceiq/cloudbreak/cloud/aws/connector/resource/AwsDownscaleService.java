@@ -28,7 +28,7 @@ import com.amazonaws.waiters.Waiter;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.scheduler.StackCancellationCheck;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AuthenticatedContextView;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
@@ -82,10 +82,9 @@ public class AwsDownscaleService {
 
             String asGroupName = cfStackUtil.getAutoscalingGroupName(auth, vms.get(0).getTemplate().getGroupName(),
                     auth.getCloudContext().getLocation().getRegion().value());
-            AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingRetryClient(credentialView,
-                    auth.getCloudContext().getLocation().getRegion().value());
+            AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingClient(credentialView, auth.getCloudContext().getLocation().getRegion().value());
             detachInstances(asGroupName, instanceIds, amazonASClient);
-            AmazonEc2RetryClient amazonEC2Client = awsClient.createEc2RetryClient(credentialView,
+            AmazonEc2Client amazonEC2Client = awsClient.createEc2Client(credentialView,
                     auth.getCloudContext().getLocation().getRegion().value());
 
             Long stackId = auth.getCloudContext().getId();
@@ -150,7 +149,7 @@ public class AwsDownscaleService {
         return result;
     }
 
-    private void terminateInstances(Long stackId, List<String> instanceIds, AmazonEc2RetryClient amazonEC2Client) {
+    private void terminateInstances(Long stackId, List<String> instanceIds, AmazonEc2Client amazonEC2Client) {
         LOGGER.debug("Terminated instances. [stack: {}, instances: {}]", stackId, instanceIds);
         try {
             amazonEC2Client.terminateInstances(new TerminateInstancesRequest().withInstanceIds(instanceIds));
@@ -169,7 +168,7 @@ public class AwsDownscaleService {
         }
     }
 
-    private void waitForTerminateInstances(Long stackId, List<String> instanceIds, AmazonEc2RetryClient amazonEC2Client) {
+    private void waitForTerminateInstances(Long stackId, List<String> instanceIds, AmazonEc2Client amazonEC2Client) {
         LOGGER.debug("Polling instance until terminated. [stack: {}, instances: {}]", stackId,
                 instanceIds);
         Waiter<DescribeInstancesRequest> instanceTerminatedWaiter = amazonEC2Client.waiters().instanceTerminated();

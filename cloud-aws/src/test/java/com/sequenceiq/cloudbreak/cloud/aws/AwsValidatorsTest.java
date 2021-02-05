@@ -103,13 +103,13 @@ public class AwsValidatorsTest {
 
     @Test
     public void testStackValidatorStackAlreadyExist() {
-        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationRetryClient(any(), anyString());
+        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationClient(any(), anyString());
         Assertions.assertThrows(CloudConnectorException.class, () -> awsStackValidatorUnderTest.validate(authenticatedContext, null));
     }
 
     @Test
     public void testStackValidatorStackUnexistent() {
-        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationRetryClient(any(), anyString());
+        doReturn(amazonCloudFormationClient).when(awsClient).createCloudFormationClient(any(), anyString());
         when(amazonCloudFormationClient.describeStacks(any())).thenThrow(new AmazonServiceException("test exist"));
         Assertions.assertDoesNotThrow(() -> awsStackValidatorUnderTest.validate(authenticatedContext, null));
     }
@@ -117,7 +117,7 @@ public class AwsValidatorsTest {
     @Test
     public void testStackValidatorStackUseRetryClient() {
         AmazonCloudFormation client = mock(AmazonCloudFormation.class);
-        doReturn(client).when(awsClient).createCloudFormationClient(any(), anyString());
+        doReturn(client).when(awsClient).createCloudFormation(any(), anyString());
         when(client.describeStacks(any()))
                 .thenThrow(new SdkClientException("repeat1 Rate exceeded"))
                 .thenThrow(new SdkClientException("repeat2Request limit exceeded"))

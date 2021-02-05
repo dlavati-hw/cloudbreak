@@ -69,8 +69,8 @@ import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudWatchClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.connector.resource.AwsResourceConnector;
 import com.sequenceiq.cloudbreak.cloud.aws.scheduler.CustomAmazonWaiterProvider;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -133,13 +133,13 @@ public class AwsLaunchTest {
     private AmazonCloudFormationClient amazonCloudFormationClient;
 
     @Mock
-    private AmazonEc2RetryClient amazonEc2RetryClient;
+    private AmazonEc2Client amazonEc2Client;
 
     @MockBean
     private AmazonElasticFileSystemClient amazonElasticFileSystemClient;
 
     @MockBean
-    private AmazonEfsRetryClient amazonEfsRetryClient;
+    private AmazonEfsClient amazonEfsClient;
 
     @MockBean
     private AmazonAutoScalingClient amazonAutoScalingClient;
@@ -192,7 +192,7 @@ public class AwsLaunchTest {
         InMemoryStateStore.putStack(1L, PollGroup.POLLABLE);
 
         AuthenticatedContext authenticatedContext = componentTestUtil.getAuthenticatedContext();
-        authenticatedContext.putParameter(AmazonEc2RetryClient.class, amazonEc2RetryClient);
+        authenticatedContext.putParameter(AmazonEc2Client.class, amazonEc2Client);
         awsResourceConnector.launch(authenticatedContext, componentTestUtil.getStackForLaunch(InstanceStatus.CREATE_REQUESTED, InstanceStatus.CREATE_REQUESTED),
                 persistenceNotifier, AdjustmentType.EXACT, Long.MAX_VALUE);
 
@@ -203,12 +203,12 @@ public class AwsLaunchTest {
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.AWS_SUBNET.equals(cloudResource.getType())), any());
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.CLOUDFORMATION_STACK.equals(cloudResource.getType())), any());
 
-        InOrder inOrder = inOrder(amazonEc2RetryClient, amazonCloudFormationClient, amazonEc2RetryClient);
-        inOrder.verify(amazonEc2RetryClient).describeImages(any());
+        InOrder inOrder = inOrder(amazonEc2Client, amazonCloudFormationClient, amazonEc2Client);
+        inOrder.verify(amazonEc2Client).describeImages(any());
         inOrder.verify(amazonCloudFormationClient).createStack(any());
-        inOrder.verify(amazonEc2RetryClient, times(2)).createVolume(any());
-        inOrder.verify(amazonEc2RetryClient, times(2)).attachVolume(any());
-        inOrder.verify(amazonEc2RetryClient, never()).describePrefixLists();
+        inOrder.verify(amazonEc2Client, times(2)).createVolume(any());
+        inOrder.verify(amazonEc2Client, times(2)).attachVolume(any());
+        inOrder.verify(amazonEc2Client, never()).describePrefixLists();
     }
 
     @Test
@@ -235,9 +235,9 @@ public class AwsLaunchTest {
         InMemoryStateStore.putStack(1L, PollGroup.POLLABLE);
 
         AuthenticatedContext authenticatedContext = componentTestUtil.getAuthenticatedContext();
-        authenticatedContext.putParameter(AmazonEc2RetryClient.class, amazonEc2RetryClient);
+        authenticatedContext.putParameter(AmazonEc2Client.class, amazonEc2Client);
         authenticatedContext.putParameter(AmazonElasticFileSystemClient.class, amazonElasticFileSystemClient);
-        authenticatedContext.putParameter(AmazonEfsRetryClient.class, amazonEfsRetryClient);
+        authenticatedContext.putParameter(AmazonEfsClient.class, amazonEfsClient);
         awsResourceConnector.launch(authenticatedContext, componentTestUtil.getStackForLaunch(InstanceStatus.CREATE_REQUESTED, InstanceStatus.CREATE_REQUESTED),
                 persistenceNotifier, AdjustmentType.EXACT, Long.MAX_VALUE);
 
@@ -248,26 +248,26 @@ public class AwsLaunchTest {
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.AWS_SUBNET.equals(cloudResource.getType())), any());
         verify(persistenceNotifier).notifyAllocation(argThat(cloudResource -> ResourceType.CLOUDFORMATION_STACK.equals(cloudResource.getType())), any());
 
-        InOrder inOrder = inOrder(amazonElasticFileSystemClient, amazonEfsRetryClient, amazonCloudFormationClient, amazonEc2RetryClient);
-        inOrder.verify(amazonEc2RetryClient).describeImages(any());
+        InOrder inOrder = inOrder(amazonElasticFileSystemClient, amazonEfsClient, amazonCloudFormationClient, amazonEc2Client);
+        inOrder.verify(amazonEc2Client).describeImages(any());
         inOrder.verify(amazonCloudFormationClient).createStack(any());
-        inOrder.verify(amazonEc2RetryClient, times(2)).createVolume(any());
-        inOrder.verify(amazonEc2RetryClient, times(2)).attachVolume(any());
-        inOrder.verify(amazonEc2RetryClient, never()).describePrefixLists();
+        inOrder.verify(amazonEc2Client, times(2)).createVolume(any());
+        inOrder.verify(amazonEc2Client, times(2)).attachVolume(any());
+        inOrder.verify(amazonEc2Client, never()).describePrefixLists();
     }
 
     private void setup() {
-        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEc2RetryClient);
-        when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonEfsRetryClient);
-        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createEc2Client(any(), anyString())).thenReturn(amazonEc2Client);
+        when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonEfsClient);
+        when(awsClient.createCloudFormationClient(any(), anyString())).thenReturn(amazonCloudFormationClient);
         when(amazonCloudFormationClient.waiters()).thenReturn(cfWaiters);
         when(cfWaiters.stackCreateComplete()).thenReturn(cfStackWaiter);
         when(cfWaiters.stackDeleteComplete()).thenReturn(cfStackWaiter);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
         when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
         when(amazonAutoScalingClient.waiters()).thenReturn(asWaiters);
         when(asWaiters.groupInService()).thenReturn(describeAutoScalingGroupsRequestWaiter);
-        when(amazonEc2RetryClient.waiters()).thenReturn(ecWaiters);
+        when(amazonEc2Client.waiters()).thenReturn(ecWaiters);
         when(ecWaiters.instanceRunning()).thenReturn(instanceWaiter);
         when(ecWaiters.instanceTerminated()).thenReturn(instanceWaiter);
         when(customAmazonWaiterProvider.getAutoscalingInstancesInServiceWaiter(any(), any())).thenReturn(describeAutoScalingGroupsRequestWaiter);
@@ -284,7 +284,7 @@ public class AwsLaunchTest {
     }
 
     private void setupCreateVolumeResponse() {
-        when(amazonEc2RetryClient.createVolume(any())).thenReturn(
+        when(amazonEc2Client.createVolume(any())).thenReturn(
                 new CreateVolumeResult().withVolume(
                         new com.amazonaws.services.ec2.model.Volume().withVolumeId(VOLUME_ID + getNextVolumeId())
                 )
@@ -296,7 +296,7 @@ public class AwsLaunchTest {
     }
 
     private void setupDescribeSubnetResponse() {
-        when(amazonEc2RetryClient.describeSubnets(any())).thenAnswer(
+        when(amazonEc2Client.describeSubnets(any())).thenAnswer(
                 (Answer<DescribeSubnetsResult>) invocation -> {
                     DescribeSubnetsRequest request = (DescribeSubnetsRequest) invocation.getArgument(0);
                     String subnetId = request.getSubnetIds().get(0);
@@ -310,7 +310,7 @@ public class AwsLaunchTest {
     }
 
     private void setupDescribeVolumeResponse() {
-        when(amazonEc2RetryClient.describeVolumes(any())).thenAnswer(
+        when(amazonEc2Client.describeVolumes(any())).thenAnswer(
                 (Answer<DescribeVolumesResult>) invocation -> {
                     DescribeVolumesResult describeVolumesResult = new DescribeVolumesResult();
                     Object[] args = invocation.getArguments();
@@ -333,7 +333,7 @@ public class AwsLaunchTest {
     }
 
     private void setupDescribeInstancesResponse() {
-        when(amazonEc2RetryClient.describeInstances(any())).thenReturn(
+        when(amazonEc2Client.describeInstances(any())).thenReturn(
                 new DescribeInstancesResult().withReservations(
                         new Reservation().withInstances(new com.amazonaws.services.ec2.model.Instance().withInstanceId("i-instance")))
         );
@@ -348,14 +348,14 @@ public class AwsLaunchTest {
     }
 
     private void setupDescribeImagesResponse() {
-        when(amazonEc2RetryClient.describeImages(any())).thenReturn(
+        when(amazonEc2Client.describeImages(any())).thenReturn(
                 new DescribeImagesResult()
                         .withImages(new com.amazonaws.services.ec2.model.Image().withRootDeviceName(""))
         );
     }
 
     private void setupDescribePrefixListsResponse() {
-        when(amazonEc2RetryClient.describePrefixLists()).thenReturn(new DescribePrefixListsResult());
+        when(amazonEc2Client.describePrefixLists()).thenReturn(new DescribePrefixListsResult());
     }
 
     private void setupDescribeStackResourceResponse() {
@@ -396,7 +396,7 @@ public class AwsLaunchTest {
                 .withLifeCycleState("creating");
 
         when(amazonElasticFileSystemClient.createFileSystem(any())).thenReturn(createFileSystemResult);
-        when(amazonEfsRetryClient.createFileSystem(any())).thenReturn(createFileSystemResult);
+        when(amazonEfsClient.createFileSystem(any())).thenReturn(createFileSystemResult);
     }
 
     private void setupDescribeFileSystems() {
@@ -408,25 +408,25 @@ public class AwsLaunchTest {
                 .withFileSystems(Arrays.asList(efsDescription1));
 
         when(amazonElasticFileSystemClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
-        when(amazonEfsRetryClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
+        when(amazonEfsClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
     }
 
     private void setupDescribeMountTargets() {
         MountTargetDescription mtDescription = new MountTargetDescription().withMountTargetId("mounttarget-1");
         DescribeMountTargetsResult describeMountTargetsResult = new DescribeMountTargetsResult().withMountTargets(mtDescription);
         when(amazonElasticFileSystemClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
-        when(amazonEfsRetryClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
+        when(amazonEfsClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
     }
 
     private void setupDeleteMountTarget() {
         DeleteMountTargetResult deleteMtResult = new DeleteMountTargetResult();
         when(amazonElasticFileSystemClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
-        when(amazonEfsRetryClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
+        when(amazonEfsClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
     }
 
     private void setupDeleteFileSystem() {
         DeleteFileSystemResult deleteFileSystemResult = new DeleteFileSystemResult();
         when(amazonElasticFileSystemClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
-        when(amazonEfsRetryClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
+        when(amazonEfsClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
     }
 }

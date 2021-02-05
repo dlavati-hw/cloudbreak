@@ -26,7 +26,7 @@ public class AwsStackValidator implements Validator {
     public void validate(AuthenticatedContext ac, CloudStack cloudStack) {
         AwsCredentialView credentialView = new AwsCredentialView(ac.getCloudCredential());
         String regionName = ac.getCloudContext().getLocation().getRegion().value();
-        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
+        AmazonCloudFormationClient cfClient = awsClient.createCloudFormationClient(credentialView, regionName);
         String cFStackName = cfStackUtil.getCfStackName(ac);
         try {
             cfClient.describeStacks(new DescribeStacksRequest().withStackName(cFStackName));

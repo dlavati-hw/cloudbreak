@@ -156,7 +156,7 @@ class AwsRdsLaunchServiceTest {
 
         when(cfStackUtil.getCfStackName(authenticatedContext)).thenReturn(STACK_NAME_CF);
 
-        when(awsClient.createCloudFormationRetryClient(isA(AwsCredentialView.class), eq(REGION))).thenReturn(cfRetryClient);
+        when(awsClient.createCloudFormationClient(isA(AwsCredentialView.class), eq(REGION))).thenReturn(cfRetryClient);
 
         when(cfRetryClient.describeStacks(isA(DescribeStacksRequest.class))).thenThrow(new AmazonServiceException("Stack not found"));
 

@@ -33,12 +33,12 @@ import com.amazonaws.services.elasticfilesystem.model.UpdateFileSystemRequest;
 import com.amazonaws.services.elasticfilesystem.model.UpdateFileSystemResult;
 import com.sequenceiq.cloudbreak.service.Retry;
 
-public class AmazonEfsRetryClient extends AmazonClient {
+public class AmazonEfsClient extends AmazonClient {
     private final AmazonElasticFileSystem client;
 
     private final Retry retry;
 
-    public AmazonEfsRetryClient(AmazonElasticFileSystem client, Retry retry) {
+    public AmazonEfsClient(AmazonElasticFileSystem client, Retry retry) {
         this.client = client;
         this.retry = retry;
     }

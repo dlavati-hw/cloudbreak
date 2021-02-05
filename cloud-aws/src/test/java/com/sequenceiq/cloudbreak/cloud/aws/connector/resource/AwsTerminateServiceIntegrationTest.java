@@ -30,7 +30,7 @@ import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.context.AwsContextBuilder;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -71,7 +71,7 @@ public class AwsTerminateServiceIntegrationTest {
     private AmazonCloudFormationClient cloudFormationRetryClient;
 
     @Mock
-    private AmazonEc2RetryClient ec2Client;
+    private AmazonEc2Client ec2Client;
 
     @Mock
     private Retry retryService;
@@ -105,7 +105,7 @@ public class AwsTerminateServiceIntegrationTest {
 
     @Test
     public void testTerminateWhenCloudformationStackTerminated() {
-        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
+        when(awsClient.createCloudFormationClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
         CloudResource cfStackResource = mock(CloudResource.class);
         when(cfStackResource.getName()).thenReturn("stackName");
         when(cfStackUtil.getCloudFormationStackResource(any())).thenReturn(cfStackResource);
@@ -187,9 +187,9 @@ public class AwsTerminateServiceIntegrationTest {
         when(cloudStack.getGroups()).thenReturn(List.of(group));
         when(cfStackUtil.getCloudFormationStackResource(any())).thenReturn(cf);
         when(cfStackUtil.getAutoscalingGroupName(any(), anyString(), anyString())).thenReturn("alma");
-        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
+        when(awsClient.createCloudFormationClient(any(), anyString())).thenReturn(cloudFormationRetryClient);
         when(awsClient.createAutoScalingClient(any(), any())).thenReturn(amazonAutoScalingClient);
-        when(awsClient.createAutoScalingRetryClient(any(), any())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createAutoScalingClient(any(), any())).thenReturn(amazonAutoScalingClient);
         when(amazonAutoScalingClient.describeAutoScalingGroups(any())).thenReturn(describeAutoScalingGroupsResult);
         when(retryService.testWith2SecDelayMax5Times(any(Supplier.class))).thenReturn(Boolean.TRUE);
 
@@ -210,7 +210,7 @@ public class AwsTerminateServiceIntegrationTest {
                 location, USER_ID, WORKSPACE_ID);
         CloudCredential credential = new CloudCredential("crn", null);
         AuthenticatedContext ac = new AuthenticatedContext(cloudContext, credential);
-        ac.putParameter(AmazonEc2RetryClient.class, ec2Client);
+        ac.putParameter(AmazonEc2Client.class, ec2Client);
         return ac;
     }
 }

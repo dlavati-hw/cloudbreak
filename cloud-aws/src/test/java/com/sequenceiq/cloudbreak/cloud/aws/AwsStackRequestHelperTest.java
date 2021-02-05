@@ -27,7 +27,7 @@ import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.ec2.model.DescribeImagesRequest;
 import com.amazonaws.services.ec2.model.DescribeImagesResult;
 import com.google.common.collect.Lists;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.context.CloudContext;
@@ -75,7 +75,7 @@ public class AwsStackRequestHelperTest {
     private Security security;
 
     @Mock
-    private AmazonEc2RetryClient amazonEC2Client;
+    private AmazonEc2Client amazonEC2Client;
 
     @InjectMocks
     private AwsStackRequestHelper underTest;
@@ -94,7 +94,7 @@ public class AwsStackRequestHelperTest {
 
         when(databaseServer.getSecurity()).thenReturn(security);
 
-        when(awsClient.createEc2RetryClient(any(AwsCredentialView.class), anyString())).thenReturn(amazonEC2Client);
+        when(awsClient.createEc2Client(any(AwsCredentialView.class), anyString())).thenReturn(amazonEC2Client);
     }
 
     @Test

@@ -26,7 +26,7 @@ import com.sequenceiq.cloudbreak.cloud.aws.AwsTaggingService;
 import com.sequenceiq.cloudbreak.cloud.aws.CloudFormationStackUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsNetworkView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -76,11 +76,12 @@ public class AwsUpscaleService {
     private AwsCloudWatchService awsCloudWatchService;
 
     public List<CloudResourceStatus> upscale(AuthenticatedContext ac, CloudStack stack, List<CloudResource> resources) {
-        AmazonCloudFormationClient cloudFormationClient = getCloudFormationRetryClient(ac);
-        AwsCredentialView credentialView = new AwsCredentialView(ac.getCloudCredential());
         String regionName = ac.getCloudContext().getLocation().getRegion().value();
-        AmazonAutoScalingClient amazonASClient = getAutoScalingRetryClient(ac);
-        AmazonEc2RetryClient amazonEC2Client = getEC2Client(ac);
+        AwsCredentialView credentialView = new AwsCredentialView(ac.getCloudCredential());
+
+        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationClient(credentialView, regionName);
+        AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingClient(credentialView, regionName);
+        AmazonEc2Client amazonEC2Client = awsClient.createEc2Client(credentialView, regionName);
 
         List<Group> scaledGroups = cloudResourceHelper.getScaledGroups(stack);
         Map<String, Group> desiredAutoscalingGroupsByName = getAutoScaleGroupsByNameFromCloudFormationTemplate(ac, cloudFormationClient, scaledGroups);
@@ -231,23 +232,8 @@ public class AwsUpscaleService {
                 .collect(Collectors.toMap(g -> cfStackUtil.getAutoscalingGroupName(ac, cloudFormationClient, g.getName()), g -> g));
     }
 
-    private AmazonEc2RetryClient getEC2Client(AuthenticatedContext ac) {
-        return awsClient.createEc2RetryClient(new AwsCredentialView(ac.getCloudCredential()),
-                ac.getCloudContext().getLocation().getRegion().value());
-    }
-
-    private AmazonAutoScalingClient getAutoScalingRetryClient(AuthenticatedContext ac) {
-        return awsClient.createAutoScalingRetryClient(new AwsCredentialView(ac.getCloudCredential()),
-                ac.getCloudContext().getLocation().getRegion().value());
-    }
-
-    private AmazonCloudFormationClient getCloudFormationRetryClient(AuthenticatedContext ac) {
-        return awsClient.createCloudFormationRetryClient(new AwsCredentialView(ac.getCloudCredential()),
-                ac.getCloudContext().getLocation().getRegion().value());
-    }
-
     private void associateElasticIpWithNewInstances(CloudStack stack, List<CloudResource> resources, AmazonCloudFormationClient cloudFormationClient,
-            AmazonEc2RetryClient amazonEC2Client, List<Group> scaledGroups, List<CloudResource> instances) {
+            AmazonEc2Client amazonEC2Client, List<Group> scaledGroups, List<CloudResource> instances) {
         boolean mapPublicIpOnLaunch = awsNetworkService.isMapPublicOnLaunch(new AwsNetworkView(stack.getNetwork()), amazonEC2Client);
         List<Group> gateways = awsNetworkService.getGatewayGroups(scaledGroups);
         Map<String, List<String>> gatewayGroupInstanceMapping = createGatewayToNewInstancesMap(instances, gateways);

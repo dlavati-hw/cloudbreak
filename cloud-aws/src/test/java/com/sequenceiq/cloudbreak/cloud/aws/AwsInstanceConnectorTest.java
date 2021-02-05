@@ -54,7 +54,7 @@ import com.amazonaws.services.ec2.model.StartInstancesResult;
 import com.amazonaws.services.ec2.model.StopInstancesRequest;
 import com.amazonaws.services.ec2.model.StopInstancesResult;
 import com.dyngr.exception.PollerStoppedException;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
 import com.sequenceiq.cloudbreak.cloud.aws.poller.PollerUtil;
 import com.sequenceiq.cloudbreak.cloud.aws.util.AwsInstanceStatusMapper;
@@ -99,7 +99,7 @@ public class AwsInstanceConnectorTest {
     private AwsEnvironmentVariableChecker awsEnvironmentVariableChecker;
 
     @Mock
-    private AmazonEc2RetryClient amazonEC2Client;
+    private AmazonEc2Client amazonEC2Client;
 
     @Mock
     private InstanceProfileCredentialsProvider instanceProfileCredentialsProvider;
@@ -116,8 +116,8 @@ public class AwsInstanceConnectorTest {
 
     @BeforeEach
     public void awsClientSetup() {
-        doReturn(amazonEC2Client).when(awsClient).createEc2RetryClient(any(AwsCredentialView.class));
-        doReturn(amazonEC2Client).when(awsClient).createEc2RetryClient(any(AwsCredentialView.class), anyString());
+        doReturn(amazonEC2Client).when(awsClient).createEc2Client(any(AwsCredentialView.class));
+        doReturn(amazonEC2Client).when(awsClient).createEc2Client(any(AwsCredentialView.class), anyString());
         doReturn(instanceProfileCredentialsProvider).when(awsClient).getInstanceProfileProvider();
 
         CloudContext context = new CloudContext(1L, "context", "crn", "AWS", "AWS",

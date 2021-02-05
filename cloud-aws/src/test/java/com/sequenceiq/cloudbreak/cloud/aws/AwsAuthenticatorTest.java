@@ -28,7 +28,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.mapper.SdkClientExceptionMapper;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -54,7 +54,7 @@ public class AwsAuthenticatorTest {
     private AwsEnvironmentVariableChecker awsEnvironmentVariableChecker;
 
     @Mock
-    private AmazonEc2RetryClient amazonEC2Client;
+    private AmazonEc2Client amazonEC2Client;
 
     @Mock
     private InstanceProfileCredentialsProvider instanceProfileCredentialsProvider;
@@ -67,20 +67,20 @@ public class AwsAuthenticatorTest {
 
     @BeforeEach
     public void awsClientSetup() {
-        doReturn(amazonEC2Client).when(awsClient).createEc2RetryClient(any(AwsCredentialView.class));
-        doReturn(amazonEC2Client).when(awsClient).createEc2RetryClient(any(AwsCredentialView.class), anyString());
+        doReturn(amazonEC2Client).when(awsClient).createEc2Client(any(AwsCredentialView.class));
+        doReturn(amazonEC2Client).when(awsClient).createEc2Client(any(AwsCredentialView.class), anyString());
         doReturn(instanceProfileCredentialsProvider).when(awsClient).getInstanceProfileProvider();
     }
 
     @Test
     public void testAuthenticateWithAccessPairMissing() {
-        doCallRealMethod().when(awsClient).createEc2RetryClient(any(), anyString());
+        doCallRealMethod().when(awsClient).createEc2Client(any(), anyString());
         Assertions.assertThrows(CredentialVerificationException.class, () -> testAuthenticate(Map.of("accessKey", "ac")));
     }
 
     @Test
     public void testAuthenticateWithAccessPairMissingSecret() {
-        doCallRealMethod().when(awsClient).createEc2RetryClient(any(), anyString());
+        doCallRealMethod().when(awsClient).createEc2Client(any(), anyString());
         Assertions.assertThrows(CredentialVerificationException.class, () -> testAuthenticate(Map.of("secretKey", "ac")));
     }
 
@@ -141,9 +141,9 @@ public class AwsAuthenticatorTest {
         CloudContext context = new CloudContext(1L, "context", "crn", "AWS", "AWS", Location.location(Region.region("country")), "user", "account");
         CloudCredential credential = new CloudCredential("id", "alma", parameters, false);
         AuthenticatedContext auth = underTest.authenticate(context, credential);
-        assertTrue(auth.hasParameter(AmazonEc2RetryClient.class.getName()),
+        assertTrue(auth.hasParameter(AmazonEc2Client.class.getName()),
                 "Authenticated context does not have amazonClient after authentication");
-        assertSame(amazonEC2Client, auth.getParameter(AmazonEc2RetryClient.class));
+        assertSame(amazonEC2Client, auth.getParameter(AmazonEc2Client.class));
 
         return auth;
     }

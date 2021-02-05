@@ -10,13 +10,13 @@ import java.util.function.Function;
 import com.amazonaws.services.ec2.model.DescribeRouteTablesRequest;
 import com.amazonaws.services.ec2.model.DescribeRouteTablesResult;
 import com.amazonaws.services.ec2.model.RouteTable;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 
 public class AwsPageCollector {
     private AwsPageCollector() {
     }
 
-    public static List<RouteTable> getAllRouteTables(AmazonEc2RetryClient ec2Client, DescribeRouteTablesRequest request) {
+    public static List<RouteTable> getAllRouteTables(AmazonEc2Client ec2Client, DescribeRouteTablesRequest request) {
         List<RouteTable> routeTableList = collectPages(ec2Client::describeRouteTables, request,
                 DescribeRouteTablesResult::getRouteTables,
                 DescribeRouteTablesResult::getNextToken,

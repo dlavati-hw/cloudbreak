@@ -72,8 +72,8 @@ import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudWatchClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsRetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEfsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.connector.resource.AwsResourceConnector;
 import com.sequenceiq.cloudbreak.cloud.aws.scheduler.CustomAmazonWaiterProvider;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
@@ -179,10 +179,10 @@ public class AwsRepairTest {
     private AmazonCloudFormationClient amazonCloudFormationClient;
 
     @Mock
-    private AmazonEc2RetryClient amazonEC2Client;
+    private AmazonEc2Client amazonEC2Client;
 
     @MockBean
-    private AmazonEfsRetryClient amazonEfsRetryClient;
+    private AmazonEfsClient amazonEfsClient;
 
     @MockBean
     private AmazonAutoScalingClient amazonAutoScalingClient;
@@ -225,19 +225,19 @@ public class AwsRepairTest {
         setup();
         setupRetryService();
         downscaleStack();
-        Mockito.reset(amazonEC2Client, amazonEfsRetryClient, amazonCloudFormationClient, amazonAutoScalingClient,
+        Mockito.reset(amazonEC2Client, amazonEfsClient, amazonCloudFormationClient, amazonAutoScalingClient,
                 persistenceNotifier);
         upscaleStack();
     }
 
     private void setup() {
-        when(awsClient.createEc2RetryClient(any(), anyString())).thenReturn(amazonEC2Client);
-        when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonEfsRetryClient);
-        when(awsClient.createCloudFormationRetryClient(any(), anyString())).thenReturn(amazonCloudFormationClient);
+        when(awsClient.createEc2Client(any(), anyString())).thenReturn(amazonEC2Client);
+        when(awsClient.createElasticFileSystemClient(any(), anyString())).thenReturn(amazonEfsClient);
+        when(awsClient.createCloudFormationClient(any(), anyString())).thenReturn(amazonCloudFormationClient);
         when(amazonCloudFormationClient.waiters()).thenReturn(cfWaiters);
         when(cfWaiters.stackCreateComplete()).thenReturn(cfStackWaiter);
         when(cfWaiters.stackDeleteComplete()).thenReturn(cfStackWaiter);
-        when(awsClient.createAutoScalingRetryClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
+        when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
         when(awsClient.createAutoScalingClient(any(), anyString())).thenReturn(amazonAutoScalingClient);
         when(awsClient.createCloudWatchClient(any(), anyString())).thenReturn(cloudWatchClient);
         when(cloudWatchClient.describeAlarms(any())).thenReturn(describeAlarmsResult);
@@ -250,27 +250,27 @@ public class AwsRepairTest {
         when(customAmazonWaiterProvider.getAutoscalingInstancesInServiceWaiter(any(), any())).thenReturn(describeAutoScalingGroupsRequestWaiter);
         when(customAmazonWaiterProvider.getAutoscalingActivitiesWaiter(any(), any())).thenReturn(describeScalingActivitiesRequestWaiter);
 
-        when(amazonEfsRetryClient.createFileSystem(any())).thenReturn(createFileSystemResult);
-        when(amazonEfsRetryClient.createFileSystem(any())).thenReturn(createFileSystemResult);
+        when(amazonEfsClient.createFileSystem(any())).thenReturn(createFileSystemResult);
+        when(amazonEfsClient.createFileSystem(any())).thenReturn(createFileSystemResult);
         when(createFileSystemResult.getFileSystemId()).thenReturn(EFS_FILESYSTEM_ID + efsIdIndex);
         when(createFileSystemResult.getName()).thenReturn(EFS_FILESYSTEM_ID + efsIdIndex);
         when(createFileSystemResult.getLifeCycleState()).thenReturn("creating");
 
-        when(amazonEfsRetryClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
-        when(amazonEfsRetryClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
+        when(amazonEfsClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
+        when(amazonEfsClient.describeFileSystems(any())).thenReturn(describeFileSystemsResult);
         when(describeFileSystemsResult.getFileSystems()).thenReturn(Arrays.asList(efsDescription1));
         when(efsDescription1.getFileSystemId()).thenReturn(EFS_FILESYSTEM_ID + efsIdIndex);
         when(efsDescription1.getLifeCycleState()).thenReturn(LifeCycleState.Available.toString());
 
-        when(amazonEfsRetryClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
-        when(amazonEfsRetryClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
+        when(amazonEfsClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
+        when(amazonEfsClient.describeMountTargets(any())).thenReturn(describeMountTargetsResult);
         when(describeMountTargetsResult.getMountTargets()).thenReturn(Arrays.asList(mtDescription));
         when(mtDescription.getMountTargetId()).thenReturn("mounttarget-1");
 
-        when(amazonEfsRetryClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
-        when(amazonEfsRetryClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
-        when(amazonEfsRetryClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
-        when(amazonEfsRetryClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
+        when(amazonEfsClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
+        when(amazonEfsClient.deleteMountTarget(any())).thenReturn(deleteMtResult);
+        when(amazonEfsClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
+        when(amazonEfsClient.deleteFileSystem(any())).thenReturn(deleteFileSystemResult);
     }
 
     private void setupRetryService() {

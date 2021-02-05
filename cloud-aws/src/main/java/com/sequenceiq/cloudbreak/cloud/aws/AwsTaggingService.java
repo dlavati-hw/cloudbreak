@@ -19,7 +19,7 @@ import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceBlockDeviceMapping;
 import com.amazonaws.services.ec2.model.Tag;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.context.AuthenticatedContext;
 import com.sequenceiq.cloudbreak.cloud.model.CloudResource;
 
@@ -61,7 +61,7 @@ public class AwsTaggingService {
         return efsTagMap;
     }
 
-    public void tagRootVolumes(AuthenticatedContext ac, AmazonEc2RetryClient ec2Client, List<CloudResource> instanceResources,
+    public void tagRootVolumes(AuthenticatedContext ac, AmazonEc2Client ec2Client, List<CloudResource> instanceResources,
             Map<String, String> userDefinedTags) {
         String stackName = ac.getCloudContext().getName();
         LOGGER.debug("Fetch AWS instances to collect all root volume ids for stack: {}", stackName);

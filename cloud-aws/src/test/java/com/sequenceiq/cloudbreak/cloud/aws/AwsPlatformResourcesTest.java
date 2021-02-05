@@ -56,7 +56,7 @@ import com.amazonaws.services.kms.model.ListAliasesResult;
 import com.amazonaws.services.kms.model.ListKeysRequest;
 import com.amazonaws.services.kms.model.ListKeysResult;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonDynamoDBClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonIdentityManagementClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonKmsClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
@@ -103,7 +103,7 @@ public class AwsPlatformResourcesTest {
     private AmazonKmsClient awskmsClient;
 
     @Mock
-    private AmazonEc2RetryClient amazonEC2Client;
+    private AmazonEc2Client amazonEC2Client;
 
     @Mock
     private AwsSubnetIgwExplorer awsSubnetIgwExplorer;
@@ -129,8 +129,8 @@ public class AwsPlatformResourcesTest {
         Mockito.reset(awsClient);
 
         when(awsDefaultZoneProvider.getDefaultZone(any(CloudCredential.class))).thenReturn(REGION_NAME);
-        when(awsClient.createEc2RetryClient(any(AwsCredentialView.class))).thenReturn(amazonEC2Client);
-        when(awsClient.createEc2RetryClient(any(AwsCredentialView.class), any())).thenReturn(amazonEC2Client);
+        when(awsClient.createEc2Client(any(AwsCredentialView.class))).thenReturn(amazonEC2Client);
+        when(awsClient.createEc2Client(any(AwsCredentialView.class), any())).thenReturn(amazonEC2Client);
         when(amazonEC2Client.describeRegions(any(DescribeRegionsRequest.class))).thenReturn(describeRegionsResult);
         when(describeRegionsResult.getRegions()).thenReturn(Collections.singletonList(region));
         when(awsAvailabilityZoneProvider.describeAvailabilityZones(any(), any(), any()))

@@ -48,7 +48,7 @@ class AwsCloudFormationErrorMessageProviderTest {
 
     @BeforeEach
     void setUp() {
-        when(awsClient.createCloudFormationRetryClient(credentialView, REGION)).thenReturn(cfRetryClient);
+        when(awsClient.createCloudFormationClient(credentialView, REGION)).thenReturn(cfRetryClient);
         lenient().when(awsEncodedAuthorizationFailureMessageDecoder.decodeAuthorizationFailureMessageIfNeeded(any(), eq(REGION), anyString()))
                 .thenAnswer(invocation -> invocation.getArgument(2));
     }

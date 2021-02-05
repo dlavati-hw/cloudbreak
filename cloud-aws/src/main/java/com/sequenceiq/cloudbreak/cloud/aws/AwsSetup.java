@@ -31,7 +31,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.sequenceiq.cloudbreak.cloud.Setup;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2RetryClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonEc2Client;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AuthenticatedContextView;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsInstanceView;
@@ -110,7 +110,7 @@ public class AwsSetup implements Setup {
         verifySpotInstances(stack);
         if (awsNetworkView.isExistingVPC()) {
             try {
-                AmazonEc2RetryClient amazonEC2Client = new AuthenticatedContextView(ac).getAmazonEC2Client();
+                AmazonEc2Client amazonEC2Client = new AuthenticatedContextView(ac).getAmazonEC2Client();
                 validateExistingIGW(awsNetworkView, amazonEC2Client);
                 validateExistingSubnet(awsNetworkView, amazonEC2Client);
             } catch (AmazonServiceException e) {
@@ -147,7 +147,7 @@ public class AwsSetup implements Setup {
         }
     }
 
-    private void validateExistingSubnet(AwsNetworkView awsNetworkView, AmazonEc2RetryClient amazonEC2Client) {
+    private void validateExistingSubnet(AwsNetworkView awsNetworkView, AmazonEc2Client amazonEC2Client) {
         if (awsNetworkView.isExistingSubnet()) {
             DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
             describeSubnetsRequest.withSubnetIds(awsNetworkView.getSubnetList());
@@ -166,7 +166,7 @@ public class AwsSetup implements Setup {
         }
     }
 
-    private void validateExistingIGW(AwsNetworkView awsNetworkView, AmazonEc2RetryClient amazonEC2Client) {
+    private void validateExistingIGW(AwsNetworkView awsNetworkView, AmazonEc2Client amazonEC2Client) {
         if (awsNetworkView.isExistingIGW()) {
             DescribeInternetGatewaysRequest describeInternetGatewaysRequest = new DescribeInternetGatewaysRequest();
             describeInternetGatewaysRequest.withInternetGatewayIds(awsNetworkView.getExistingIgw());
@@ -200,7 +200,7 @@ public class AwsSetup implements Setup {
         if (StringUtils.isNotEmpty(keyPairName)) {
             boolean keyPairIsPresentOnEC2 = false;
             try {
-                AmazonEc2RetryClient client = new AuthenticatedContextView(ac).getAmazonEC2Client();
+                AmazonEc2Client client = new AuthenticatedContextView(ac).getAmazonEC2Client();
                 DescribeKeyPairsResult describeKeyPairsResult = client.describeKeyPairs(new DescribeKeyPairsRequest().withKeyNames(keyPairName));
                 keyPairIsPresentOnEC2 = describeKeyPairsResult.getKeyPairs().stream().findFirst().isPresent();
             } catch (RuntimeException e) {
@@ -219,10 +219,10 @@ public class AwsSetup implements Setup {
         if (!upscale) {
             return;
         }
-        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationRetryClient(new AwsCredentialView(ac.getCloudCredential()),
-                ac.getCloudContext().getLocation().getRegion().value());
-        AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingRetryClient(new AwsCredentialView(ac.getCloudCredential()),
-                ac.getCloudContext().getLocation().getRegion().value());
+        String regionName = ac.getCloudContext().getLocation().getRegion().value();
+        AwsCredentialView awsCredential = new AwsCredentialView(ac.getCloudCredential());
+        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationClient(awsCredential, regionName);
+        AmazonAutoScalingClient amazonASClient = awsClient.createAutoScalingClient(awsCredential, regionName);
         List<Group> groups = stack.getGroups().stream().filter(g -> g.getInstances().stream().anyMatch(
                 inst -> InstanceStatus.CREATE_REQUESTED == inst.getTemplate().getStatus())).collect(Collectors.toList());
         Map<String, Group> groupMap = groups.stream().collect(

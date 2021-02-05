@@ -26,7 +26,7 @@ public class AwsLaunchTemplateImageUpdateService {
     public void updateImage(AuthenticatedContext authenticatedContext, CloudStack stack, CloudResource cfResource) {
         AwsCredentialView credentialView = new AwsCredentialView(authenticatedContext.getCloudCredential());
         String regionName = authenticatedContext.getCloudContext().getLocation().getRegion().getRegionName();
-        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
+        AmazonCloudFormationClient cloudFormationClient = awsClient.createCloudFormationClient(credentialView, regionName);
 
         String cfStackName = cfResource.getName();
         String cfTemplate = getCfTemplate(cfResource, cloudFormationClient);
