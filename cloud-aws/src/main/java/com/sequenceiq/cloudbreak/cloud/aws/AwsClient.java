@@ -4,6 +4,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -18,6 +19,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
@@ -39,7 +41,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.google.common.annotations.VisibleForTesting;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonAutoScalingClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonClientExceptionHandler;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonCloudFormationClient;
@@ -75,7 +77,6 @@ public class AwsClient {
 
     private static final int MAX_CONSECUTIVE_RETRIES_BEFORE_THROTTLING = 200;
 
-    @Inject
     private AwsSessionCredentialClient credentialClient;
 
     @Inject
@@ -127,7 +128,7 @@ public class AwsClient {
     }
 
     @VisibleForTesting
-    public AmazonEC2 createAccessWithClientConfiguration(AwsCredentialView awsCredential, String regionName, ClientConfiguration clientConfiguration) {
+    AmazonEC2 createAccessWithClientConfiguration(AwsCredentialView awsCredential, String regionName, ClientConfiguration clientConfiguration) {
         return proxy(AmazonEC2Client.builder()
                 .withCredentials(getCredentialProvider(awsCredential))
                 .withClientConfiguration(clientConfiguration)
@@ -139,22 +140,41 @@ public class AwsClient {
     public AmazonCloudWatchClient createCloudWatchClient(AwsCredentialView awsCredential, String regionName) {
         AmazonCloudWatch client = proxy(com.amazonaws.services.cloudwatch.AmazonCloudWatchClient.builder()
                 .withCredentials(getCredentialProvider(awsCredential))
+                .withRequestHandlers(new AwsTracingRequestHandler(tracer))
                 .withRegion(regionName)
                 .build(), awsCredential, regionName);
         return new AmazonCloudWatchClient(client);
     }
 
-    public AWSSecurityTokenServiceClient createAwsSecurityTokenService(AwsCredentialView awsCredential) {
+    public AmazonSecurityTokenServiceClient createSecurityTokenService(AwsCredentialView awsCredential) {
         String region = awsDefaultZoneProvider.getDefaultZone(awsCredential);
-        return createAwsSecurityTokenService(awsCredential, region);
+        return createSecurityTokenService(awsCredential, region);
     }
 
-    public AWSSecurityTokenServiceClient createAwsSecurityTokenService(AwsCredentialView awsCredential, String region) {
+    public AmazonSecurityTokenServiceClient createSecurityTokenService(AwsCredentialView awsCredential, String region) {
         AWSSecurityTokenService client = proxy(com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient.builder()
                 .withCredentials(getCredentialProvider(awsCredential))
+                .withRequestHandlers(new AwsTracingRequestHandler(tracer))
                 .withRegion(region)
                 .build(), awsCredential, region);
-        return new AWSSecurityTokenServiceClient(client);
+        return new AmazonSecurityTokenServiceClient(client);
+    }
+
+    public AmazonSecurityTokenServiceClient createCdpSecurityTokenServiceClient(AwsCredentialView awsCredential) {
+        if (!awsEnvironmentVariableChecker.isAwsAccessKeyAvailable(awsCredential)
+                || !awsEnvironmentVariableChecker.isAwsSecretAccessKeyAvailable(awsCredential)) {
+            LOGGER.debug("AWSSecurityTokenServiceClient will use aws metadata because environment variables are undefined");
+        } else {
+            LOGGER.debug("AWSSecurityTokenServiceClient will use environment variables");
+        }
+
+        String region = awsDefaultZoneProvider.getDefaultZone(awsCredential);
+        AWSSecurityTokenService client = proxy(com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient.builder()
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .withRequestHandlers(new AwsTracingRequestHandler(tracer))
+                .withRegion(region)
+                .build(), awsCredential, region);
+        return new AmazonSecurityTokenServiceClient(client);
     }
 
     public AmazonIdentityManagementClient createAmazonIdentityManagement(AwsCredentialView awsCredential) {
@@ -183,11 +203,12 @@ public class AwsClient {
     }
 
     @VisibleForTesting
-    public AmazonCloudFormation createCloudFormationClient(AwsCredentialView awsCredential, String regionName) {
+    AmazonCloudFormation createCloudFormationClient(AwsCredentialView awsCredential, String regionName) {
         return com.amazonaws.services.cloudformation.AmazonCloudFormationClient.builder()
                 .withCredentials(getCredentialProvider(awsCredential))
                 .withRegion(regionName)
                 .withRequestHandlers(new AwsTracingRequestHandler(tracer))
+                .withClientConfiguration(getDefaultClientConfiguration())
                 .build();
     }
 
@@ -196,6 +217,7 @@ public class AwsClient {
                 .withCredentials(getCredentialProvider(awsCredential))
                 .withRegion(regionName)
                 .withRequestHandlers(new AwsTracingRequestHandler(tracer))
+                .withClientConfiguration(getDefaultClientConfiguration())
                 .build(), awsCredential, regionName);
         return new AmazonElasticLoadBalancingClient(client);
     }
@@ -214,6 +236,7 @@ public class AwsClient {
                 .withCredentials(getCredentialProvider(awsCredential))
                 .withRegion(regionName)
                 .withRequestHandlers(new AwsTracingRequestHandler(tracer))
+                .withClientConfiguration(getDefaultClientConfiguration())
                 .build(), awsCredential, regionName);
         return new AmazonAutoScalingClient(client, retry);
     }
@@ -327,7 +350,7 @@ public class AwsClient {
     }
 
     @VisibleForTesting
-    public InstanceProfileCredentialsProvider getInstanceProfileProvider() {
+    InstanceProfileCredentialsProvider getInstanceProfileProvider() {
         return InstanceProfileCredentialsProvider.getInstance();
     }
 
@@ -351,12 +374,16 @@ public class AwsClient {
     }
 
     private AwsSessionCredentialProvider createAwsSessionCredentialProvider(AwsCredentialView awsCredential) {
-        return new AwsSessionCredentialProvider(awsCredential, credentialClient);
+        return new AwsSessionCredentialProvider(awsCredential, Objects.requireNonNull(credentialClient));
     }
 
     private <T> T proxy(T client, AwsCredentialView awsCredentialView, String region) {
         AspectJProxyFactory proxyFactory = new AspectJProxyFactory(client);
         proxyFactory.addAspect(new AmazonClientExceptionHandler(awsCredentialView, region, sdkClientExceptionMapper));
         return proxyFactory.getProxy();
+    }
+
+    public void setAwsSessionCredentialClient(AwsSessionCredentialClient awsSessionCredentialClient) {
+        this.credentialClient = awsSessionCredentialClient;
     }
 }

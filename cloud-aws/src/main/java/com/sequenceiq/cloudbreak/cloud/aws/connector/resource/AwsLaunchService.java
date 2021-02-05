@@ -400,21 +400,20 @@ public class AwsLaunchService {
         String cFStackName = cfStackUtil.getCfStackName(ac);
         AwsCredentialView credentialView = new AwsCredentialView(ac.getCloudCredential());
         String regionName = ac.getCloudContext().getLocation().getRegion().value();
-        AmazonCloudFormationClient cfRetryClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
 
         AmazonCloudFormationClient cfClient = awsClient.createCloudFormationRetryClient(credentialView, regionName);
         DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(cFStackName);
 
         String cfTemplate = cloudFormationTemplateBuilder.build(modelContext);
         LOGGER.debug("CloudFormationTemplate: {}", cfTemplate);
-        cfRetryClient.updateStack(awsStackRequestHelper.createUpdateStackRequest(ac, stack, cFStackName, cfTemplate));
+        cfClient.updateStack(awsStackRequestHelper.createUpdateStackRequest(ac, stack, cFStackName, cfTemplate));
 
         Waiter<DescribeStacksRequest> updateWaiter = cfClient.waiters().stackUpdateComplete();
         StackCancellationCheck stackCancellationCheck = new StackCancellationCheck(ac.getCloudContext().getId());
         run(updateWaiter, describeStacksRequest, stackCancellationCheck, String.format("CloudFormation stack %s update failed.", cFStackName),
             () -> awsCloudFormationErrorMessageProvider.getErrorReason(ac, cFStackName, ResourceStatus.UPDATE_FAILED));
 
-        return cfRetryClient.listStackResources(awsStackRequestHelper.createListStackResourcesRequest(cFStackName));
+        return cfClient.listStackResources(awsStackRequestHelper.createListStackResourcesRequest(cFStackName));
     }
 
     private void associatePublicIpsToGatewayInstances(CloudStack stack, String cFStackName, AmazonCloudFormationClient cfRetryClient,

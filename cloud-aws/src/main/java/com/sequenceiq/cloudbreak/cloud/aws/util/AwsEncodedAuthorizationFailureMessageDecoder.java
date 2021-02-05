@@ -13,7 +13,7 @@ import com.amazonaws.services.securitytoken.model.AWSSecurityTokenServiceExcepti
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageRequest;
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageResult;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.common.json.Json;
 
@@ -49,7 +49,7 @@ public class AwsEncodedAuthorizationFailureMessageDecoder {
     }
 
     private String getResultMessage(AwsCredentialView credentialView, String region, String encodedMessage) {
-        AWSSecurityTokenServiceClient awsSts = awsClient.createAwsSecurityTokenService(credentialView, region);
+        AmazonSecurityTokenServiceClient awsSts = awsClient.createSecurityTokenService(credentialView, region);
         DecodeAuthorizationMessageRequest decodeAuthorizationMessageRequest = new DecodeAuthorizationMessageRequest().withEncodedMessage(encodedMessage);
         DecodeAuthorizationMessageResult decodeAuthorizationMessageResult = awsSts.decodeAuthorizationMessage(decodeAuthorizationMessageRequest);
         String decodedMessage = decodeAuthorizationMessageResult.getDecodedMessage();

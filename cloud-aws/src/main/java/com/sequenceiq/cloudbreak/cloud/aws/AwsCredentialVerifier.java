@@ -25,7 +25,7 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sequenceiq.cloudbreak.cloud.aws.cache.AwsCredentialCachingConfig;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonIdentityManagementClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.common.json.JsonUtil;
@@ -48,7 +48,7 @@ public class AwsCredentialVerifier {
         try {
             Map<String, List<String>> resourcesWithActions = getRequiredActions(policies);
             AmazonIdentityManagementClient amazonIdentityManagement = awsClient.createAmazonIdentityManagement(awsCredential);
-            AWSSecurityTokenServiceClient awsSecurityTokenService = awsClient.createAwsSecurityTokenService(awsCredential);
+            AmazonSecurityTokenServiceClient awsSecurityTokenService = awsClient.createSecurityTokenService(awsCredential);
             String arn;
             if (awsCredential.getRoleArn() != null) {
                 arn = awsCredential.getRoleArn();

@@ -33,7 +33,7 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonIdentityManagementClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 import com.sequenceiq.cloudbreak.cloud.model.CloudCredential;
@@ -63,11 +63,11 @@ public class AwsCredentialVerifierTest {
         AmazonIdentityManagementClient amazonIdentityManagement = mock(AmazonIdentityManagementClient.class);
         when(awsClient.createAmazonIdentityManagement(any(AwsCredentialView.class))).thenReturn(amazonIdentityManagement);
 
-        AWSSecurityTokenServiceClient awsSecurityTokenService = mock(AWSSecurityTokenServiceClient.class);
+        AmazonSecurityTokenServiceClient awsSecurityTokenService = mock(AmazonSecurityTokenServiceClient.class);
         GetCallerIdentityResult getCallerIdentityResult = new GetCallerIdentityResult();
         getCallerIdentityResult.setArn("arn");
         when(awsSecurityTokenService.getCallerIdentity(any(GetCallerIdentityRequest.class))).thenReturn(getCallerIdentityResult);
-        when(awsClient.createAwsSecurityTokenService(any(AwsCredentialView.class))).thenReturn(awsSecurityTokenService);
+        when(awsClient.createSecurityTokenService(any(AwsCredentialView.class))).thenReturn(awsSecurityTokenService);
 
         ArgumentCaptor<SimulatePrincipalPolicyRequest> requestArgumentCaptor = ArgumentCaptor.forClass(SimulatePrincipalPolicyRequest.class);
         AtomicInteger i = new AtomicInteger();
@@ -122,11 +122,11 @@ public class AwsCredentialVerifierTest {
         AmazonIdentityManagementClient amazonIdentityManagement = mock(AmazonIdentityManagementClient.class);
         when(awsClient.createAmazonIdentityManagement(any(AwsCredentialView.class))).thenReturn(amazonIdentityManagement);
 
-        AWSSecurityTokenServiceClient awsSecurityTokenService = mock(AWSSecurityTokenServiceClient.class);
+        AmazonSecurityTokenServiceClient awsSecurityTokenService = mock(AmazonSecurityTokenServiceClient.class);
         GetCallerIdentityResult getCallerIdentityResult = new GetCallerIdentityResult();
         getCallerIdentityResult.setArn("arn");
         when(awsSecurityTokenService.getCallerIdentity(any(GetCallerIdentityRequest.class))).thenReturn(getCallerIdentityResult);
-        when(awsClient.createAwsSecurityTokenService(any(AwsCredentialView.class))).thenReturn(awsSecurityTokenService);
+        when(awsClient.createSecurityTokenService(any(AwsCredentialView.class))).thenReturn(awsSecurityTokenService);
 
         ArgumentCaptor<SimulatePrincipalPolicyRequest> requestArgumentCaptor = ArgumentCaptor.forClass(SimulatePrincipalPolicyRequest.class);
         SimulatePrincipalPolicyResult simulatePrincipalPolicyResult = new SimulatePrincipalPolicyResult();
@@ -162,11 +162,11 @@ public class AwsCredentialVerifierTest {
         AmazonIdentityManagementClient amazonIdentityManagement = mock(AmazonIdentityManagementClient.class);
         when(awsClient.createAmazonIdentityManagement(any(AwsCredentialView.class))).thenReturn(amazonIdentityManagement);
 
-        AWSSecurityTokenServiceClient awsSecurityTokenService = mock(AWSSecurityTokenServiceClient.class);
+        AmazonSecurityTokenServiceClient awsSecurityTokenService = mock(AmazonSecurityTokenServiceClient.class);
         GetCallerIdentityResult getCallerIdentityResult = new GetCallerIdentityResult();
         getCallerIdentityResult.setArn("arn");
         when(awsSecurityTokenService.getCallerIdentity(any(GetCallerIdentityRequest.class))).thenReturn(getCallerIdentityResult);
-        when(awsClient.createAwsSecurityTokenService(any(AwsCredentialView.class))).thenReturn(awsSecurityTokenService);
+        when(awsClient.createSecurityTokenService(any(AwsCredentialView.class))).thenReturn(awsSecurityTokenService);
 
         ArgumentCaptor<SimulatePrincipalPolicyRequest> requestArgumentCaptor = ArgumentCaptor.forClass(SimulatePrincipalPolicyRequest.class);
         AtomicInteger i = new AtomicInteger();

@@ -26,7 +26,7 @@ import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageRequ
 import com.amazonaws.services.securitytoken.model.DecodeAuthorizationMessageResult;
 import com.github.jknack.handlebars.internal.Files;
 import com.sequenceiq.cloudbreak.cloud.aws.AwsClient;
-import com.sequenceiq.cloudbreak.cloud.aws.client.AWSSecurityTokenServiceClient;
+import com.sequenceiq.cloudbreak.cloud.aws.client.AmazonSecurityTokenServiceClient;
 import com.sequenceiq.cloudbreak.cloud.aws.view.AwsCredentialView;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +43,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
     private AwsClient awsClient;
 
     @Mock
-    private AWSSecurityTokenServiceClient awsSecurityTokenService;
+    private AmazonSecurityTokenServiceClient awsSecurityTokenService;
 
     @Mock
     private AwsCredentialView awsCredentialView;
@@ -61,7 +61,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(awsClient.createAwsSecurityTokenService(any(), eq(REGION)))
+        lenient().when(awsClient.createSecurityTokenService(any(), eq(REGION)))
                 .thenReturn(awsSecurityTokenService);
         lenient().when(awsSecurityTokenService.decodeAuthorizationMessage(any()))
                 .thenReturn(new DecodeAuthorizationMessageResult().withDecodedMessage(decodedMessage));
@@ -84,7 +84,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
 
         assertThat(result).isEqualTo("You are not authorized to perform action ec2:CreateSecurityGroup " +
                 "on resource arn:aws:ec2:eu-central-1:123456789101:vpc/vpc-id");
-        verify(awsClient).createAwsSecurityTokenService(awsCredentialView, REGION);
+        verify(awsClient).createSecurityTokenService(awsCredentialView, REGION);
         verify(awsSecurityTokenService).decodeAuthorizationMessage(requestCaptor.capture());
         DecodeAuthorizationMessageRequest request = requestCaptor.getValue();
         assertThat(request.getEncodedMessage()).isEqualTo("encoded-message");
@@ -100,7 +100,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
         String result = underTest.decodeAuthorizationFailureMessageIfNeeded(awsCredentialView, REGION, ENCODED_AUTHORIZATION_FAILURE_MESSAGE);
         assertThat(result).isEqualTo("API: ec2:CreateSecurityGroup You are not authorized to perform this operation. " +
                 "(Please add sts:DecodeAuthorizationMessage right to your IAM policy to get more details.)");
-        verify(awsClient).createAwsSecurityTokenService(awsCredentialView, REGION);
+        verify(awsClient).createSecurityTokenService(awsCredentialView, REGION);
         verify(awsSecurityTokenService).decodeAuthorizationMessage(any());
     }
 
@@ -112,7 +112,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
 
         String result = underTest.decodeAuthorizationFailureMessageIfNeeded(awsCredentialView, REGION, ENCODED_AUTHORIZATION_FAILURE_MESSAGE);
         assertThat(result).isEqualTo(ENCODED_AUTHORIZATION_FAILURE_MESSAGE);
-        verify(awsClient).createAwsSecurityTokenService(awsCredentialView, REGION);
+        verify(awsClient).createSecurityTokenService(awsCredentialView, REGION);
         verify(awsSecurityTokenService).decodeAuthorizationMessage(any());
     }
 
@@ -124,7 +124,7 @@ class AwsEncodedAuthorizationFailureMessageDecoderTest {
 
         String result = underTest.decodeAuthorizationFailureMessageIfNeeded(awsCredentialView, REGION, ENCODED_AUTHORIZATION_FAILURE_MESSAGE);
         assertThat(result).isEqualTo(ENCODED_AUTHORIZATION_FAILURE_MESSAGE);
-        verify(awsClient).createAwsSecurityTokenService(awsCredentialView, REGION);
+        verify(awsClient).createSecurityTokenService(awsCredentialView, REGION);
         verify(awsSecurityTokenService).decodeAuthorizationMessage(any());
     }
 
