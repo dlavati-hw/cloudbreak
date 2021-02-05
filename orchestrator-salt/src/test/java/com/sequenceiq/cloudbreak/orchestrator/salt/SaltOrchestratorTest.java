@@ -6,6 +6,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -133,7 +134,8 @@ public class SaltOrchestratorTest {
         when(saltRunner.runner(any(OrchestratorBootstrap.class), any(ExitCriteria.class), any(ExitCriteriaModel.class))).thenReturn(callable);
         when(saltRunner.runner(any(OrchestratorBootstrap.class), any(ExitCriteria.class), any(ExitCriteriaModel.class), anyInt(), anyBoolean()))
                 .thenReturn(callable);
-        when(saltService.createSaltConnector(any())).thenReturn(saltConnector);
+        when(saltService.createSaltConnector(any(GatewayConfig.class))).thenReturn(saltConnector);
+        when(saltService.createSaltConnector(anyCollection())).thenReturn(List.of(saltConnector));
         when(saltService.getPrimaryGatewayConfig(anyList())).thenReturn(gatewayConfig);
     }
 

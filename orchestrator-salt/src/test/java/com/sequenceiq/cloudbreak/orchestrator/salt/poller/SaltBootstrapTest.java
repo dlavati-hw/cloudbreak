@@ -86,7 +86,8 @@ public class SaltBootstrapTest {
         targets.add(new Node("10.0.0.2", null, null, "hg"));
         targets.add(new Node("10.0.0.3", null, null, "hg"));
 
-        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, Collections.singletonList(gatewayConfig), targets, new BootstrapParams());
+        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, List.of(saltConnector), Collections.singletonList(gatewayConfig), targets,
+                new BootstrapParams());
         saltBootstrap = spy(saltBootstrap);
         doReturn(mock(MinionAcceptor.class)).when(saltBootstrap).createMinionAcceptor(any(SaltAction.class));
 
@@ -108,7 +109,8 @@ public class SaltBootstrapTest {
         String missingNodeIp = "10.0.0.3";
         targets.add(new Node(missingNodeIp, null, null, "hg"));
 
-        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, Collections.singletonList(gatewayConfig), targets, new BootstrapParams());
+        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, List.of(saltConnector), Collections.singletonList(gatewayConfig), targets,
+                new BootstrapParams());
         saltBootstrap = spy(saltBootstrap);
         doReturn(mock(MinionAcceptor.class)).when(saltBootstrap).createMinionAcceptor(any(SaltAction.class));
         try {
@@ -140,7 +142,7 @@ public class SaltBootstrapTest {
         BootstrapParams params = new BootstrapParams();
         params.setRestartNeeded(true);
         params.setRestartNeededFlagSupported(false);
-        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, Collections.singletonList(gatewayConfig), targets, params);
+        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, List.of(saltConnector), Collections.singletonList(gatewayConfig), targets, params);
         saltBootstrap = spy(saltBootstrap);
         doReturn(mock(MinionAcceptor.class)).when(saltBootstrap).createMinionAcceptor(any(SaltAction.class));
 
@@ -177,7 +179,7 @@ public class SaltBootstrapTest {
         BootstrapParams params = new BootstrapParams();
         params.setRestartNeeded(true);
         params.setRestartNeededFlagSupported(true);
-        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, Collections.singletonList(gatewayConfig), targets, params);
+        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, List.of(saltConnector), Collections.singletonList(gatewayConfig), targets, params);
         saltBootstrap = spy(saltBootstrap);
         doReturn(mock(MinionAcceptor.class)).when(saltBootstrap).createMinionAcceptor(any(SaltAction.class));
 
@@ -214,7 +216,7 @@ public class SaltBootstrapTest {
         BootstrapParams params = new BootstrapParams();
         params.setRestartNeeded(false);
         params.setRestartNeededFlagSupported(true);
-        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, Collections.singletonList(gatewayConfig), targets, params);
+        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, List.of(saltConnector), Collections.singletonList(gatewayConfig), targets, params);
         saltBootstrap = spy(saltBootstrap);
         doReturn(mock(MinionAcceptor.class)).when(saltBootstrap).createMinionAcceptor(any(SaltAction.class));
 
@@ -251,7 +253,7 @@ public class SaltBootstrapTest {
         BootstrapParams params = new BootstrapParams();
         params.setRestartNeeded(false);
         params.setRestartNeededFlagSupported(false);
-        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, Collections.singletonList(gatewayConfig), targets, params);
+        SaltBootstrap saltBootstrap = new SaltBootstrap(saltConnector, List.of(saltConnector), Collections.singletonList(gatewayConfig), targets, params);
         saltBootstrap = spy(saltBootstrap);
         doReturn(mock(MinionAcceptor.class)).when(saltBootstrap).createMinionAcceptor(any(SaltAction.class));
 
