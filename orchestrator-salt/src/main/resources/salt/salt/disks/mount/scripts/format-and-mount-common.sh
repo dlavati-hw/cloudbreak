@@ -166,9 +166,28 @@ get_nvme_device_names() {
     return $((return_value))
 }
 
+get_data_disk_list() {
+    local log_file=$1
+    local return_value=0
+
+    local data_disk_list=""
+    for logical_unit_number in $ATTACHED_VOLUME_NAME_LIST; do
+        data_disk_list+=" /dev/$(ls -lR /dev/disk/azure/ | awk '{print $9"\t"$11}' | grep $logical_unit_number | cut -f2 | cut -f4 -d'/')"
+    done
+
+    log log_file "Found data disks: $data_disk_list"
+    echo $data_disk_list
+    return $return_value
+}
+
 get_device_names() {
     local log_file=$1
-    if $(are_all_attached_volume_names_present $log_file) ; then
+    if [[ $CLOUD_PLATFORM -eq AZURE ]]; then
+        data_disk_list=$(get_data_disk_list $log_file)
+        local return_value=$?
+        echo $data_disk_list
+        return $((return_value))
+    elif $(are_all_attached_volume_names_present $log_file) ; then
         echo $ATTACHED_VOLUME_NAME_LIST
         return 0
     else

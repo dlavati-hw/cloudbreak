@@ -104,6 +104,17 @@ save_env_vars_to_log_file() {
     log $LOG_FILE CLOUD_PLATFORM=$CLOUD_PLATFORM
 }
 
+get_temporary_disk_device_name() {
+  if [[ $CLOUD_PLATFORM -eq AZURE ]]; then
+    temporary_disk="/dev/$(ls -l /dev/disk/azure/ | awk '{print $9"\t"$11}' | grep -E '(resource[^-])' | cut -f2 | cut -f3 -d'/')"
+    log $LOG_FILE found temprary disk: \"$temporary_disk\"
+    echo "$temporary_disk"
+  else
+    log $LOG_FILE "The 'get_temporary_disk_device_name' function can only be used on the Azure platform."
+    echo ""
+  fi
+}
+
 main() {
     log $LOG_FILE "started, version: $VERSION"
     save_env_vars_to_log_file
@@ -114,7 +125,13 @@ main() {
     if [ ! $? -eq 0 ]; then
         exit_with_code $LOG_FILE $EXIT_CODE_ERROR "some volumes are missing"
     fi
-    ephemeral_device_name_list=$(get_ephemeral_device_names "$device_name_list")
+
+    local ephemeral_device_name_list=""
+    if [[ $CLOUD_PLATFORM -eq AZURE ]]; then
+      ephemeral_device_name_list=$(get_temporary_disk_device_name)
+    else
+      ephemeral_device_name_list=$(get_ephemeral_device_names "$device_name_list")
+    fi
     log $LOG_FILE found devices: $device_name_list $ephemeral_device_name_list
 
     format_disks_if_unformatted "$device_name_list $ephemeral_device_name_list"
